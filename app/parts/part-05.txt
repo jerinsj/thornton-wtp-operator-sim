@@ -1,0 +1,260 @@
+e:'BW basin ≥75%',ok:state.bwBasin>=.75||state.bwSeq.active},
+      {name:'At least 5 filters available',ok:state.filters.filter(f=>f.status==='RUN').length>=5||state.bwSeq.active},
+      {name:'No active actuator fault',ok:!state.bwSeq.fault}
+    ];
+  }
+
+  function maybeInjectBackwashFault(){
+    const s=state.bwSeq;
+    if(!s.active||s.faultInjected||s.faultAtStep===null||s.step!==s.faultAtStep)return;
+    const possible=[
+      {actuator:0,name:'Influent valve',feedback:'OPEN',message:'Influent isolation valve was commanded CLOSED but position feedback remained OPEN.'},
+      {actuator:1,name:'Effluent valve',feedback:'OPEN',message:'Effluent isolation valve was commanded CLOSED but position feedback remained OPEN.'},
+      {actuator:2,name:'Waste / drain valve',feedback:'CLOSED',message:'Waste/drain valve was commanded OPEN but position feedback remained CLOSED.'},
+      {actuator:3,name:'Agitation / air valve',feedback:'CLOSED',message:'Media-agitation valve was commanded OPEN but position feedback remained CLOSED.'},
+      {actuator:4,name:'Backwash-water valve',feedback:'CLOSED',message:'Backwash-water valve was commanded OPEN but position feedback remained CLOSED.'}
+    ];
+    let valid=possible.filter(x=>{
+      if(s.step===1)return x.actuator===0||x.actuator===1;
+      if(s.step===2)return x.actuator===2;
+      if(s.step===3)return x.actuator===3;
+      if(s.step===4||s.step===5)return x.actuator===4||x.actuator===2;
+      if(s.step===7)return x.actuator===0||x.actuator===1||x.actuator===2;
+      return false;
+    });
+    if(!valid.length)return;
+    const f=valid[Math.floor(Math.random()*valid.length)];
+    s.fault={...f,step:s.step};s.paused=true;s.faultInjected=true;
+    alarm('bwfault','hi','Backwash actuator position mismatch',f.message+' Automatic sequence placed in HOLD.');
+    log(`Backwash sequence HOLD: ${f.message}`);
+  }
+
+  function filterCondition(f){
+    if(f.status==='BW') return 'BACKWASH';
+    if(f.run>=288 || f.head>=8.5 || f.turb>=.120) return 'DUE';
+    if(f.run>=240 || f.head>=7.0 || f.turb>=.090) return 'REVIEW';
+    return 'NORMAL';
+  }
+  function renderBackwashSequence(){
+    if(!$('bwProgress'))return;
+    const s=state.bwSeq;
+    const active=s.active?state.filters[s.filterId-1]:null;
+    $('bwSeqTitle').textContent=s.active?`FILTER ${s.filterId} — AUTOMATIC BACKWASH`:'NO ACTIVE SEQUENCE';
+    $('bwSeqMode').textContent=s.fault?'HOLD / FAULT':s.active?'AUTO SEQUENCE':'READY';
+    $('bwCurrentStep').textContent=s.active?`${s.step+1}. ${BW_STEPS[s.step].name}`:'—';
+    $('bwStepTimer').textContent=s.active?`${s.stepElapsed} / ${BW_STEPS[s.step].dur} min`:'—';
+    $('bwTotalTimer').textContent=s.active?`${s.totalElapsed} min`:'—';
+    $('bwWaterPhase').textContent=s.active&&BW_STEPS[s.step].water?'YES':'NO';
+
+    $('bwProgress').innerHTML='';
+    BW_STEPS.forEach((st,i)=>{
+      const d=document.createElement('div');
+      d.className='bw-step '+(s.active&&i<s.step?'done':s.active&&i===s.step?(s.fault?'fault':'active'):'');
+      d.innerHTML=`<small>${i+1}</small><b>${st.name}</b>`;
+      $('bwProgress').appendChild(d);
+    });
+
+    $('bwPermissives').innerHTML='';
+    bwPermissiveStates().forEach(p=>{
+      const d=document.createElement('div');d.className='perm '+(p.ok?'':'bad');
+      d.innerHTML=`<i></i><span>${p.name}: <b>${p.ok?'OK':'NOT MET'}</b></span>`;
+      $('bwPermissives').appendChild(d);
+    });
+
+    $('bwActuators').innerHTML='';
+    bwActuatorStates().forEach(a=>{
+      const d=document.createElement('div');d.className='actuator '+a.status;
+      d.innerHTML=`<small>${a.name}</small><b>CMD ${a.cmd}</b><span>FB ${a.feedback}</span>`;
+      $('bwActuators').appendChild(d);
+    });
+
+    const fp=$('bwFaultPanel'), ft=$('bwFaultText'), btn=$('bwFaultRespondBtn');
+    if(s.fault){
+      fp.classList.add('fault');ft.textContent=s.fault.message;btn.disabled=false;
+    }else{
+      fp.classList.remove('fault');ft.textContent=s.active?'Sequence running normally.':'No backwash actuator fault.';btn.disabled=true;
+    }
+  }
+
+  function renderFilters(){
+    const box=$('filters'); box.innerHTML='';
+    const activeBW=state.filters.find(x=>x.status==='BW');
+    $('bwStatus').textContent=activeBW?`FILTER ${activeBW.id} — ${state.bwSeq.fault?'HOLD':'SEQUENCE ACTIVE'}`:'AVAILABLE';
+    $('bwBasin').textContent=Math.round(state.bwBasin*100)+'%';
+    $('bwMakeup').textContent=state.bwMakeupMGD.toFixed(1)+' MGD';
+    $('bwCount').textContent=state.bwCount;
+    state.filters.forEach(f=>{
+      const d=document.createElement('div');d.className='filter';
+      const condition=filterCondition(f);
+      const blocked=!!activeBW && f.status==='RUN';
+      const basinBlocked=!activeBW && state.bwBasin<.75 && f.status==='RUN';
+      const actionText=blocked?'Backwash system busy':basinBlocked?'BW basin below game permissive':'Start backwash';
+      d.innerHTML=`<div class="filter-head"><span class="filter-name">Filter ${f.id}</span><span class="badge">${condition}</span></div>
+      <div class="filter-grid"><span>Run hrs</span><b>${f.run.toFixed(0)}</b><span>Headloss</span><b>${f.head.toFixed(1)} ft</b><span>Effluent</span><b>${f.turb.toFixed(3)} NTU</b><span>Condition</span><b>${condition}</b></div>
+      <button class="btn ${(condition==='DUE'||condition==='REVIEW')?'good':''}" data-bw="${f.id}" ${f.status!=='RUN'||blocked||basinBlocked?'disabled':''}>${actionText}</button>`;
+      box.appendChild(d);
+    });
+    box.querySelectorAll('[data-bw]').forEach(b=>b.onclick=()=>startBackwash(+b.dataset.bw));
+    renderBackwashSequence();
+  }
+  function startBackwash(id){
+    const f=state.filters[id-1]; if(f.status!=='RUN') return;
+    const active=state.filters.find(x=>x.status==='BW');
+    if(active){
+      log(`Backwash request for Filter ${id} blocked — Filter ${active.id} sequence already active.`);
+      showModal('Backwash Interlock',`<p><b>Filter ${active.id}</b> is already in backwash. Only one filter backwash can be active in this training model.</p>`);
+      return;
+    }
+    if(state.bwBasin<.75){
+      alarm('bwbasin','med','Backwash supply basin below start permissive','Allow filtered-water makeup to restore the simulated backwash basin before beginning another wash.');
+      showModal('Backwash Start Permissive Not Met',`<p>The simulated 430,000-gallon backwash supply basin is at <b>${Math.round(state.bwBasin*100)}%</b>.</p><p>This game requires at least <b>75%</b> before starting another backwash. The threshold is a training assumption, not a published Thornton PLC setpoint.</p>`);
+      return;
+    }
+
+    const condition=filterCondition(f);
+    if(condition==='NORMAL'){
+      state.efficiency=Math.max(0,state.efficiency-6);
+      state.response=Math.max(0,state.response-1);
+      log(`Premature backwash: Filter ${id} was NORMAL at ${f.run.toFixed(0)} run hr, ${f.head.toFixed(1)} ft headloss, ${f.turb.toFixed(3)} NTU.`);
+      alarm('prematurebw','lo','Premature filter backwash','A healthy filter was washed before the game model indicated review/due condition. Efficiency points were deducted.');
+    } else {
+      state.response=Math.min(100,state.response+1);
+    }
+
+    f.status='BW';f.bw=0;state.bwCount++;
+    state.bwSeq={
+      active:true,filterId:id,step:0,stepElapsed:0,totalElapsed:0,paused:false,fault:null,
+      faultAtStep:Math.random()<.18?[1,2,3,4,5,7][Math.floor(Math.random()*6)]:null,
+      faultInjected:false
+    };
+    log(`Started Filter ${id} automatic backwash sequence (${condition}).`);
+    state.efficiency=Math.max(0,state.efficiency-.8);
+    renderFilters();
+  }
+  function demandProfile(){
+    const hr=(360+state.minute)/60;
+    const morning=7.0*Math.exp(-Math.pow((hr-8.0)/2.0,2));
+    const afternoon=10.0*Math.exp(-Math.pow((hr-16.5)/3.0,2));
+    return 22.5 + morning + afternoon;
+  }
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  function avgStorage(){
+    const stored=state.tanks.reduce((s,t)=>s+t.cap*t.level/100,0);
+    state.storageMG=stored;
+    return stored/state.storageCap;
+  }
+  function zoneTankAverage(zi){
+    const ts=state.tanks.filter(t=>t.zone===zi);
+    if(!ts.length)return avgStorage();
+    const cap=ts.reduce((s,t)=>s+t.cap,0);
+    return ts.reduce((s,t)=>s+t.cap*t.level/100,0)/cap;
+  }
+  function updateDistribution(flow){
+    let extra=0;
+    if(state.event==='demand') extra+=5.0;
+    if(state.event==='fireflow') extra+=6.0;
+    if(state.event==='mainbreak') extra+=2.8;
+    state.cityDemand=demandProfile()+extra;
+
+    let storagePct=avgStorage();
+    const desiredOther=state.cityDemand-flow + (0.61-storagePct)*12;
+    state.otherSupply += (clamp(desiredOther,8,48)-state.otherSupply)*.035;
+    const totalSupply=flow+state.otherSupply;
+    const systemBalance=totalSupply-state.cityDemand;
+    state.storageTrend=systemBalance/1440;
+
+    state.pumps.forEach(p=>{
+      if(p.trip){p.run=false;return;}
+      if(p.mode==='FORCED'){p.run=true;return;}
+      const z=state.zones[p.zone];
+      const zStore=zoneTankAverage(p.zone);
+      const demandCall=state.cityDemand>p.threshold;
+      const storageCall=zStore<.56;
+      const pressureCall=z.pressure<57;
+      p.run=demandCall||storageCall||pressureCall||p.id===1;
+    });
+
+    state.tanks.forEach(t=>{
+      const z=state.zones[t.zone];
+      const support=state.pumps.filter(p=>p.zone===t.zone&&p.run&&!p.trip).length;
+      const share=z.weight;
+      const zoneDemand=state.cityDemand*share;
+      const nominalSupply=totalSupply*share;
+      const pumpingAssist=support*.22;
+      let deltaMG=(nominalSupply-zoneDemand)/1440 + systemBalance/1440*(t.cap/state.storageCap)*.35 + pumpingAssist/1440;
+      if(state.event==='mainbreak'&&state.eventZone===t.zone) deltaMG-=.45/1440;
+      t.level=clamp(t.level+(deltaMG/t.cap)*100,8,98);
+    });
+
+    storagePct=avgStorage();
+
+    state.zones.forEach((z,zi)=>{
+      const support=state.pumps.filter(p=>p.zone===zi&&p.run&&!p.trip).length;
+      const localDemand=state.cityDemand*z.weight;
+      const zStore=zoneTankAverage(zi);
+      let target=z.base + (zStore-.60)*22 + support*3.4 - Math.max(0,localDemand-6)*1.0;
+      if(state.event==='mainbreak'&&state.eventZone===zi)target-=14;
+      if(state.event==='fireflow'&&state.eventZone===zi)target-=9;
+      if(state.event==='pumptrip'&&state.eventZone===zi)target-=6;
+      if(state.event==='prvfault'&&state.eventZone===zi)target-=8;
+      z.pressure += (target-z.pressure)*.075;
+    });
+
+    state.pumps.forEach(p=>{
+      const zp=state.zones[p.zone].pressure;
+      p.discharge += ((zp+18+(p.run?5:0))-p.discharge)*.10;
+      if(p.mode==='FORCED'&&p.run) state.efficiency=Math.max(0,state.efficiency-.0022);
+    });
+
+    const minP=Math.min(...state.zones.map(z=>z.pressure));
+    const minTank=Math.min(...state.tanks.map(t=>t.level));
+    const maxTank=Math.max(...state.tanks.map(t=>t.level));
+    let dPenalty=0;
+    if(minP<50)dPenalty+=(50-minP)*.028;
+    if(minP<40)dPenalty+=(40-minP)*.05;
+    if(minTank<30)dPenalty+=(30-minTank)*.018;
+    if(maxTank>94)dPenalty+=(maxTank-94)*.008;
+    if(Math.abs(totalSupply-state.cityDemand)>9)dPenalty+=.012;
+    if(state.prv.abnormal)dPenalty+=.006*state.prv.abnormal;
+    state.distribution=Math.max(0,state.distribution-dPenalty);
+
+    if(minP<40) alarm('distpress','hi','Critical distribution pressure','At least one simulated main pressure-zone family is below 40 psi. Review demand, tank levels, pumping and active incidents.');
+    else if(minP<50) alarm('distpress','med','Low distribution pressure','At least one simulated pressure-zone family is below the game advisory range.');
+    else if(minP>53) clearAlarm('distpress',true);
+
+    if(minTank<25) alarm('tanklow','hi','Potable tank level low','At least one of the nine simulated potable tanks is below 25%. Review production and zone pumping.');
+    else if(minTank>34) clearAlarm('tanklow',true);
+
+    if(maxTank>95) alarm('tankhigh','med','Potable tank level high','At least one simulated tank is near the upper game limit. Review production and pumping.');
+    else if(maxTank<91) clearAlarm('tankhigh',true);
+  }
+  function renderDistribution(){
+    const flow=+controls.flow.value;
+    const netFlow=state.twtpNet;
+    const storagePct=avgStorage();
+    $('cityDemand').textContent=state.cityDemand.toFixed(1)+' MGD';
+    $('twtpSupply').textContent=netFlow.toFixed(1)+' MGD';
+    $('otherSupply').textContent=state.otherSupply.toFixed(1)+' MGD';
+    $('storagePctMain').textContent=Math.round(storagePct*100)+'%';
+    $('storageMG').textContent=state.storageMG.toFixed(1)+' MG modeled stored volume';
+    $('demandTrend').textContent=state.cityDemand>37?'high system demand':state.cityDemand<27?'light system demand':'normal system demand';
+
+    const zbox=$('zones');zbox.innerHTML='';
+    state.zones.forEach(z=>{
+      const d=document.createElement('div');
+      const cls=z.pressure<40?'low':z.pressure<50?'warn':'';
+      d.className='zone '+cls;
+      const sub=z.sub.map(s=>`<i>${s}</i>`).join('');
+      d.innerHTML=`<small>ZONE FAMILY ${z.id}</small><b>${z.pressure.toFixed(0)} psi</b><span>${(state.cityDemand*z.weight).toFixed(1)} MGD modeled load</span><div class="subtags">${sub}</div>`;
+      zbox.appendChild(d);
+    });
+
+    const pbox=$('pumpStations');pbox.innerHTML='';
+    state.pumps.forEach(p=>{
+      const d=document.createElement('div');d.className='station '+(p.trip?'trip':p.mode==='FORCED'?'forced':'');
+      const status=p.trip?'TRIP':p.run?(p.mode==='FORCED'?'FORCED RUN':'AUTO RUN'):'AUTO STANDBY';
+      const action=p.trip?'Reset station':p.mode==='FORCED'?'Return AUTO':p.run?'Hold AUTO':'Force run';
+      d.innerHTML=`<div class="line"><b>${p.label}</b><small>Zone ${state.zones[p.zone].id}</small></div><div class="line"><small>${status}</small><b>${p.run?p.discharge.toFixed(0)+' psi':'—'}</b></div><button class="btn" data-pump="${p.id}" ${(!p.trip&&p.mode==='AUTO'&&p.run)?'disabled':''}>${action}</button>`;
+      pbox.appendChild(d);
+    });
+    pbox.querySelectorAll('[data-pump]').forEach(b=>b.onclick=()=>operatePump(+b.da
