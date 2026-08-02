@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Thornton WTP Operator Simulator V16</title>
+  <title>Thornton WTP Operator Simulator V17</title>
   <style>
     body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11161b;color:#eef2f5;font:14px "Segoe UI Variable Text",Inter,"Segoe UI",Roboto,Arial,sans-serif}
     .loader{max-width:620px;padding:28px;text-align:center}.loader b{display:block;font-size:18px;margin-bottom:8px}.loader span{color:#a4b0b9;line-height:1.5}.err{color:#ff9b9b;margin-top:14px}
@@ -12,47 +12,28 @@
   <script src="app/patch-v13.js?v=13"></script>
   <script src="app/patch-v14.js?v=14"></script>
   <script src="app/patch-v16.js?v=16.3"></script>
+  <script src="app/patch-v17.js?v=17.1"></script>
 </head>
 <body>
-  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16…</b><span>Interactive SCADA-style training simulation with Start / Resume / Scenario modes, animated schematics, randomized shifts, dynamic chemistry and PFAS GAC. Not an actual control system.</span><div class="err" id="err"></div></div>
+  <div class="loader"><b>Loading Thornton WTP Operator Simulator V17…</b><span>Interactive SCADA-style training simulation with reliable Start / Resume / Scenario controls, animated schematics, randomized shifts, dynamic chemistry and PFAS GAC. Not an actual control system.</span><div class="err" id="err"></div></div>
   <script>
     (async()=>{
       const parts=Array.from({length:10},(_,i)=>`app/parts/part-${String(i).padStart(2,'0')}.txt`);
       try{
-        const [responses,heroResponse]=await Promise.all([
-          Promise.all(parts.map(p=>fetch(p))),
-          fetch('assets/home/hero-small-v3.txt?v=3')
-        ]);
+        const responses=await Promise.all(parts.map(p=>fetch(p)));
         const failed=responses.findIndex(r=>!r.ok);
         if(failed>=0) throw new Error(`Could not load simulator bundle part ${failed+1}.`);
-        if(!heroResponse.ok) throw new Error('Could not load the home image asset.');
         let source=(await Promise.all(responses.map(r=>r.text()))).join('');
-        const heroBase64=(await heroResponse.text()).replace(/\s/g,'');
-        if(!heroBase64.startsWith('/9j/') || !heroBase64.endsWith('=')) throw new Error('Home image data is invalid.');
         if(typeof patchSimulatorSource!=='function') throw new Error('V12 patch module did not load.');
         if(typeof patchSimulatorSourceV13!=='function') throw new Error('V13 chemistry patch module did not load.');
         if(typeof patchSimulatorSourceV14!=='function') throw new Error('V14 theme patch module did not load.');
         if(typeof patchSimulatorSourceV16!=='function') throw new Error('V16 interactive HMI patch module did not load.');
+        if(typeof patchSimulatorSourceV17!=='function') throw new Error('V17 home-control patch module did not load.');
         source=patchSimulatorSource(source);
         source=patchSimulatorSourceV13(source);
         source=patchSimulatorSourceV14(source);
         source=patchSimulatorSourceV16(source);
-        const heroCSS=`
-          .v16-panel{width:min(1180px,96vw);max-height:94vh;grid-template-columns:1fr;overflow:auto}
-          .v16-photo{min-height:0;background:#0e1317;overflow:hidden;border-radius:18px 18px 0 0}
-          .v16-photo img{display:block;width:100%;height:auto;min-height:0;max-height:none;object-fit:contain;object-position:center center}
-          .v16-copy{padding:18px 24px 22px}
-          .v16-copy h1{font-size:30px;margin:6px 0 8px}
-          .v16-copy p{margin:0 0 8px;max-width:980px}
-          .v16-meta{margin:8px 0}.v16-actions{margin:8px 0}
-          @media(max-height:760px) and (min-width:851px){
-            .v16-photo img{max-height:340px;object-fit:contain;object-position:center center}
-            .v16-copy{padding:14px 22px 18px}.v16-copy p{font-size:13px;line-height:1.4}
-          }
-          @media(max-width:850px){.v16-photo img{max-height:none;object-fit:contain}.v16-copy{padding:16px}}
-        `;
-        source=source.replace('</style>',heroCSS+'\n</style>');
-        source=source.replace('<img id="v16Photo" alt="Thornton Water Treatment Plant site view">',`<img id="v16Photo" alt="Thornton Water Treatment Plant aerial site view" src="data:image/jpeg;base64,${heroBase64}">`);
+        source=patchSimulatorSourceV17(source);
         document.open();
         document.write(source);
         document.close();
