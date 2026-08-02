@@ -11,28 +11,24 @@
   <script src="app/patch-v12.js?v=12"></script>
   <script src="app/patch-v13.js?v=13"></script>
   <script src="app/patch-v14.js?v=14"></script>
-  <script src="app/patch-v16.js?v=16"></script>
+  <script src="app/patch-v16.js?v=16.2"></script>
 </head>
 <body>
   <div class="loader"><b>Loading Thornton WTP Operator Simulator V16…</b><span>Interactive SCADA-style training simulation with Start / Resume / Scenario modes, animated schematics, randomized shifts, dynamic chemistry and PFAS GAC. Not an actual control system.</span><div class="err" id="err"></div></div>
   <script>
     (async()=>{
       const parts=Array.from({length:10},(_,i)=>`app/parts/part-${String(i).padStart(2,'0')}.txt`);
-      const heroFiles=[
-        'assets/home/hero-0.txt','assets/home/hero-1.txt','assets/home/hero-2.txt','assets/home/hero-3.txt',
-        'assets/home/hero-4.txt','assets/home/hero-5.txt','assets/home/hero-6-fixed.txt','assets/home/hero-7.txt'
-      ];
       try{
-        const [responses,heroResponses]=await Promise.all([
+        const [responses,heroResponse]=await Promise.all([
           Promise.all(parts.map(p=>fetch(p))),
-          Promise.all(heroFiles.map(p=>fetch(p)))
+          fetch('assets/home/hero-inline.txt?v=2')
         ]);
         const failed=responses.findIndex(r=>!r.ok);
         if(failed>=0) throw new Error(`Could not load simulator bundle part ${failed+1}.`);
-        const heroFailed=heroResponses.findIndex(r=>!r.ok);
-        if(heroFailed>=0) throw new Error(`Could not load home image part ${heroFailed+1}.`);
+        if(!heroResponse.ok) throw new Error('Could not load the home image asset.');
         let source=(await Promise.all(responses.map(r=>r.text()))).join('');
-        const heroBase64=(await Promise.all(heroResponses.map(r=>r.text()))).join('').replace(/\s/g,'');
+        const heroBase64=(await heroResponse.text()).replace(/\s/g,'');
+        if(!heroBase64.startsWith('/9j/')) throw new Error('Home image data is invalid.');
         if(typeof patchSimulatorSource!=='function') throw new Error('V12 patch module did not load.');
         if(typeof patchSimulatorSourceV13!=='function') throw new Error('V13 chemistry patch module did not load.');
         if(typeof patchSimulatorSourceV14!=='function') throw new Error('V14 theme patch module did not load.');
@@ -50,7 +46,7 @@
           .v16-copy p{margin:0 0 8px;max-width:980px}
           .v16-meta{margin:8px 0}.v16-actions{margin:8px 0}
           @media(max-height:760px) and (min-width:851px){
-            .v16-photo img{max-height:340px;object-fit:cover;object-position:center center}
+            .v16-photo img{max-height:340px;object-fit:contain;object-position:center center}
             .v16-copy{padding:14px 22px 18px}.v16-copy p{font-size:13px;line-height:1.4}
           }
           @media(max-width:850px){.v16-photo img{max-height:none;object-fit:contain}.v16-copy{padding:16px}}
@@ -61,7 +57,7 @@
         document.write(source);
         document.close();
       }catch(err){
-        document.getElementById('err').textContent='Unable to load the simulator. Serve this repository through GitHub Pages or another HTTP static server. '+err.message;
+        document.getElementById('err').textContent='Unable to load the simulator. '+err.message;
       }
     })();
   </script>
