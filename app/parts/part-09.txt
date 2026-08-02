@@ -1,0 +1,149 @@
+ick="location.reload()">Start new shift</button>`);
+    log('Shift ended with score '+state.score+'.');
+  }
+  Object.values(controls).forEach(c=>c.addEventListener('input',render));
+  $('modal').onclick=e=>{if(e.target===$('modal'))$('modal').classList.remove('show')};
+
+  log('Oncoming shift started. Review prior-shift turnover, alarms and operating status.');
+  log('Mission: maintain finished-water stability while balancing five pressure-zone families, nine potable tanks, distribution pumping and demand.');
+  log('Distribution model loaded: 5 zone families, 7 distribution pump stations, 9 potable tanks and ~65 modeled PRVs.');
+  log('Filter runs staggered across the 6–12 day game range; routine shifts should usually see 0–1 backwash.');
+  log('Backwash basin makeup is diverted from filtered water and temporarily reduces net TWTP delivery.');
+  log('Backwash interlocks active: one filter at a time and basin start permissive.');
+  log('Backwash sequence model active: step-by-step automatic sequence with occasional simulated actuator position failures.');
+  log('Routine workload active: scheduled rounds, lab checks, inventories, housekeeping, maintenance coordination and turnover must be completed.');
+  log('Incident-response mode active: ACK does not clear an alarm; scenario alarms require an operator response.');
+  log('Future-state PFAS GAC facility enabled: PFAS is laboratory monitored in ppt; no continuous PFAS analyzer is simulated.');
+  state.historyT=[.07,.07];state.historyC=[2.2,2.2];
+  render();
+  setInterval(step,1000);
+
+  // ---- V4 SCADA PAGE NAVIGATION ----
+  const pageMeta={
+    overview:['SCADA / SYSTEM','System Overview','Plant, distribution, alarms, routine workload and shift priorities.'],
+    tasks:['SCADA / SHIFT WORK','Shift Tasks','Rounds, sampling, inventories, housekeeping, maintenance coordination and turnover.'],
+    treatment:['SCADA / TREATMENT','Treatment','Production, source blend and clarification control.'],
+    filters:['SCADA / FILTERS','Filters','Six biofilters, filter condition, automatic backwash steps, permissives and actuator feedback.'],
+    pfas:['SCADA / PFAS','PFAS GAC','Future-state granular activated carbon treatment, hydraulics, media service and laboratory PFAS monitoring.'],
+    chemicals:['SCADA / CHEMICALS','Ozone / Chemicals','Dose setpoints, equivalent lb/MG, calculated lb/day demand, feed delivery and process response.'],
+    distribution:['SCADA / DISTRIBUTION','Distribution Overview','Demand, production, zone-family pressures and PRV condition.'],
+    tanks:['SCADA / DISTRIBUTION / STORAGE','Potable Storage Tanks','Nine modeled tank levels and storage balance.'],
+    pumps:['SCADA / DISTRIBUTION / PUMPING','Pump Stations','Remote station status, trips and simplified operator commands.'],
+    alarms:['SCADA / ALARMS','Alarm Summary','Acknowledge, diagnose, respond and verify.'],
+    log:['SCADA / LOGBOOK','Operator Log','Chronological shift actions, events and system responses.']
+  };
+  function setPage(id){
+    document.querySelectorAll('.scada-page').forEach(p=>p.classList.toggle('active',p.dataset.pageId===id));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+    const m=pageMeta[id]||pageMeta.overview;
+    $('pageCrumb').textContent=m[0];$('pageTitle').textContent=m[1];$('pageSubtitle').textContent=m[2];
+    try{localStorage.setItem('thorntonSimPage',id)}catch(e){}
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>setPage(b.dataset.page));
+  $('distCheckProxy').onclick=()=>$('distBtn').click();
+  $('dispatchProxy').onclick=()=>$('dispatchBtn').click();
+
+  function renderPFAS(){
+    if(!$('pfasFlow'))return;
+    $('pfasInfluentFlow').textContent=state.pfas.flow.toFixed(1)+' MGD';
+    $('pfasFlow').textContent=state.pfas.flow.toFixed(1)+' MGD';
+    $('pfasMode').textContent=state.pfas.mode;
+    $('pfasStage').textContent=state.pfas.mode;
+    $('pfasHeadloss').textContent=state.pfas.headloss.toFixed(1)+' ft';
+    $('pfasMedia').textContent=Math.round(state.pfas.mediaRemaining*100)+'%';
+    $('pfasBV').textContent=Math.round(state.pfas.bedVolumes).toLocaleString();
+    $('pfasInPFOA').textContent=state.pfas.influentPFOA.toFixed(1)+' ppt';
+    $('pfasInPFOS').textContent=state.pfas.influentPFOS.toFixed(1)+' ppt';
+    $('pfasOutPFOA').textContent=state.pfas.labPFOA.toFixed(2)+' ppt';
+    $('pfasOutPFOS').textContent=state.pfas.labPFOS.toFixed(2)+' ppt';
+    $('pfasSampleAge').textContent=state.pfas.sampleAgeDays+' day'+(state.pfas.sampleAgeDays===1?'':'s');
+    $('pfasTrend').textContent=state.pfas.breakthrough;
+    $('pfasPFOAStatus').textContent=state.pfas.samplePending?'new sample pending':'latest verified sample';
+    $('pfasPFOSStatus').textContent=state.pfas.samplePending?'new sample pending':'latest verified sample';
+    $('pfasActionNote').textContent=state.pfas.samplePending
+      ?`PFAS sample is in the simulated laboratory queue; compressed game result in about ${state.pfas.sampleTimer} minutes.`
+      :'No PFAS laboratory sample is currently pending.';
+  }
+
+  function updateScadaChrome(){
+    const n=activeAlarms.size;
+    $('navAlarmCount').textContent=n;
+    $('qlAlarms').textContent=n;
+    $('alarmPageState').textContent=n?`${n} ACTIVE ALARM${n===1?'':'S'}`:'NO ACTIVE ALARMS';
+    const lt=[...state.tanks].sort((a,b)=>a.level-b.level)[0];
+    const lp=[...state.zones].sort((a,b)=>a.pressure-b.pressure)[0];
+    $('qlTank').textContent=lt?`${lt.id} ${lt.level.toFixed(0)}%`:'--';
+    $('qlPressure').textContent=lp?`Z${lp.id} ${lp.pressure.toFixed(0)} psi`:'--';
+    const bw=state.filters.find(f=>f.status==='BW');
+    $('qlBW').textContent=bw?`FILTER ${bw.id}`:'NONE';
+    $('qlDemand').textContent=state.cityDemand.toFixed(1)+' MGD';
+    $('qlDist').textContent=Math.round(state.distribution);
+    renderPFAS();
+    const flowNow=+controls.flow.value;
+    const ferricDose=+controls.coag.value;
+    const ozoneDose=+controls.ozone.value;
+    const chlorineDose=+controls.chlorine.value;
+    const ammoniaDose=+controls.ammonia.value;
+    const phTarget=+controls.ph.value;
+
+    // Universal water-treatment mass conversion: 1 mg/L = 8.34 lb/MG.
+    const toLbMG=dose=>dose*8.34;
+    const toLbDay=dose=>dose*8.34*flowNow;
+
+    // Fictional product-basis conversions for game display only.
+    // These do NOT represent Thornton's actual delivered chemical strengths/densities.
+    const ferricProductLbPerGal=11.5;
+    const hypoEquivalentLbPerGal=6.0;
+    const ammoniaEquivalentLbPerGal=4.6;
+
+    const ferricLbDay=toLbDay(ferricDose);
+    const ozoneLbDay=toLbDay(ozoneDose);
+    const chlorineLbDay=toLbDay(chlorineDose);
+    const ammoniaLbDay=toLbDay(ammoniaDose);
+
+    $('ferricDoseSP').textContent=ferricDose.toFixed(1)+' mg/L';
+    $('ferricLbMG').textContent=toLbMG(ferricDose).toFixed(1)+' lb/MG';
+    $('ferricLbDay').textContent=Math.round(ferricLbDay).toLocaleString()+' lb/day';
+    $('ferricGPH').textContent=(ferricLbDay/ferricProductLbPerGal/24).toFixed(1)+' gal/hr';
+    $('ferricPumpPct').textContent=Math.round(Math.min(100,8+ferricDose/30*78))+'%';
+
+    $('ozoneDoseSP').textContent=ozoneDose.toFixed(1)+' mg/L';
+    $('ozoneLbMG').textContent=toLbMG(ozoneDose).toFixed(1)+' lb/MG';
+    $('ozoneLbDay').textContent=Math.round(ozoneLbDay).toLocaleString()+' lb/day';
+    $('ozoneOutputPct').textContent=Math.round(Math.min(100,ozoneDose/3*92))+'%';
+    $('chemOzoneStatus').textContent=(ozoneDose*(state.event==='ozfault'?.55:1)).toFixed(1)+' mg/L';
+
+    $('chlorineDoseSP').textContent=chlorineDose.toFixed(1)+' mg/L';
+    $('chlorineLbMG').textContent=toLbMG(chlorineDose).toFixed(1)+' lb/MG';
+    $('chlorineLbDay').textContent=Math.round(chlorineLbDay).toLocaleString()+' lb/day';
+    $('chlorineGPH').textContent=(chlorineLbDay/hypoEquivalentLbPerGal/24).toFixed(1)+' gal/hr';
+    $('chlorinePumpPct').textContent=Math.round(Math.min(100,10+chlorineDose/5*78))+'%';
+    $('chemClStatus').textContent=state.finishCl.toFixed(2)+' mg/L';
+
+    $('ammoniaDoseSP').textContent=ammoniaDose.toFixed(2)+' mg/L';
+    $('ammoniaLbMG').textContent=toLbMG(ammoniaDose).toFixed(1)+' lb/MG';
+    $('ammoniaLbDay').textContent=Math.round(ammoniaLbDay).toLocaleString()+' lb/day';
+    $('ammoniaGPH').textContent=(ammoniaLbDay/ammoniaEquivalentLbPerGal/24).toFixed(2)+' gal/hr';
+    $('ammoniaPumpPct').textContent=Math.round(Math.min(100,8+ammoniaDose*70))+'%';
+    $('chemAmmoniaStatus').textContent=ammoniaDose.toFixed(2)+' mg/L';
+
+    $('phTargetSP').textContent=phTarget.toFixed(2);
+    $('chemPHStatus').textContent=state.finishPH.toFixed(2);
+    $('phPumpPct').textContent=Math.round(Math.min(100,15+Math.max(0,phTarget-7.2)*32))+'%';
+  }
+
+  const _renderAlarmsV4=renderAlarms;
+  renderAlarms=function(){_renderAlarmsV4();updateScadaChrome();};
+  const _renderV4=render;
+  render=function(){_renderV4();updateScadaChrome();};
+
+  let initialPage='overview';
+  try{const saved=localStorage.getItem('thorntonSimPage');if(pageMeta[saved])initialPage=saved;}catch(e){}
+  setPage(initialPage);
+  updateScadaChrome();
+
+})();
+</script>
+</body>
+</html>
