@@ -1,7 +1,10 @@
 # Version History
 
+## V12 — Randomized Shifts / Real-Time Pace
+Slowed the simulation clock so the speed range is now **30 simulated seconds to 1 simulated minute per real second**. The former 1–10 simulated-minutes-per-second range was removed to give the operator more time to navigate SCADA, recognize alarms, diagnose problems, and respond. V12 also preserves the randomized-shift system introduced in V11.
+
 ## V11 — Randomized Shifts
-Added randomized shift handoffs and shift-specific incident pools. Each new shift now varies production, source blend, water-quality starting values, chemical setpoints, storage, zone conditions, backwash-basin level, filter age/headloss/turbidity, and PFAS GAC status. Most shifts inherit one or two minor imperfect conditions, while some begin relatively stable. Each shift receives roughly 8–11 possible incident types, and incident types are removed from that shift's remaining pool after they occur to reduce repetition. A shift can also begin with an active incident already present at turnover.
+Added randomized shift handoffs and shift-specific incident pools. Each new shift varies production, source blend, water-quality starting values, chemical setpoints, storage, zone conditions, backwash-basin level, filter age/headloss/turbidity, and PFAS GAC status. Most shifts inherit zero to two minor imperfect conditions. Each shift receives roughly 8–11 possible incident types, and incident types are removed from that shift's remaining pool after they occur to reduce repetition. A shift can also begin with an active incident already present at turnover.
 
 ## V10 — Routine Shift Work
 Added scheduled plant rounds, process/lab checks, distribution reviews, chemical inventory, housekeeping, filter reviews, maintenance coordination, PFAS checks, and shift turnover.
