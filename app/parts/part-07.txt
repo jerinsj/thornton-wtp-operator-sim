@@ -1,0 +1,251 @@
+clearAlarm('prv',true);}
+      if(state.event==='analyzer') state.sampleCount++;
+      if(state.event==='pfasbreak'&&!state.pfas.samplePending){
+        state.pfas.samplePending=true;state.pfas.sampleTimer=150;
+        log('Confirmation PFAS process sample submitted to the simulated laboratory.');
+      }
+      if(state.event==='pfashl')state.pfas.headloss=Math.max(2.2,state.pfas.headloss-.6);
+      $('modal').classList.remove('show');
+      if(activeAlarms.has('event')){
+        const a=activeAlarms.get('event');a.detail=state.eventMeta.msg+' OPERATOR RESPONSE RECORDED — continue monitoring until the condition clears.';
+      }
+      renderAlarms();render();
+    }else{
+      state.response=Math.max(0,state.response-6);
+      state.quality=Math.max(0,state.quality-1);
+      log(`Poor incident response selected for ${state.eventMeta.name}.`);
+      const box=$('modalBox');
+      const r=document.createElement('div');r.className='incident-result';
+      r.innerHTML='<b>Not the preferred response.</b> The choice does not address the indicated problem. Reassess the alarm, process data, and affected system.';
+      const old=box.querySelector('.incident-result');if(old)old.remove();
+      box.insertBefore(r,box.querySelector('.row'));
+    }
+  }
+
+  function step(){
+    if(state.ended)return;
+    const n=+controls.speed.value;
+    for(let z=0;z<n;z++) simulateMinute();
+    render();
+  }
+  function simulateMinute(){
+    state.minute++;
+    updateRoutineWork();
+    const flow=+controls.flow.value, blend=+controls.blend.value/100, coag=+controls.coag.value, ozone=+controls.ozone.value, chlorine=+controls.chlorine.value, ammonia=+controls.ammonia.value, ph=+controls.ph.value;
+    state.demand=demandProfile();
+
+    let baseRaw=2.2 + (1-blend)*1.9 + Math.sin(state.minute/41)*.25;
+    if(state.event==='storm') baseRaw += 10*Math.min(1,(95-state.eventTimer+10)/35);
+    state.rawTurb += (baseRaw-state.rawTurb)*.055;
+    state.rawTOC = 2.6 + (1-blend)*1.1 + (state.event==='odor'?1.8:0);
+    state.odor = .8 + (1-blend)*.4 + (state.event==='odor'?2.2:0);
+
+    const optimalCoag = 12.5 + state.rawTurb*.52 + state.rawTOC*.55 - state.jarBonus;
+    const effectiveCoag=coag*(state.event==='coagfeed'?.72:1);
+    const coagErr=Math.abs(effectiveCoag-optimalCoag);
+    const removal=Math.max(.55, .93 - coagErr*.018 - Math.max(0,flow-16)*.008);
+    let targetSettled=Math.max(.12,state.rawTurb*(1-removal));
+    if(state.event==='sludge') targetSettled+=.28;
+    state.settled += (targetSettled-state.settled)*.08;
+
+    let ozoneEffective=ozone*(state.event==='ozfault'?.55:1);
+    let oxidationNeed=.55+state.rawTOC*.22+state.odor*.25;
+    const ozonePerformance=Math.min(1.1,ozoneEffective/oxidationNeed);
+
+    const online=state.filters.filter(f=>f.status==='RUN');
+    const perFilter=flow/Math.max(1,online.length);
+    online.forEach(f=>{
+      f.run += 1/60;
+      f.head += .00012*perFilter*(1+state.settled*1.3);
+      const agePenalty=Math.max(0,f.run-220)*.00013;
+      const loadPenalty=Math.max(0,perFilter-3.3)*.014;
+      const ozonePenalty=Math.max(0,.8-ozonePerformance)*.05;
+      f.turb=.035 + state.settled*.075 + agePenalty + loadPenalty + ozonePenalty + Math.random()*.004;
+      if(state.event==='filterbreak'&&state.eventFilter===f.id) f.turb+=.075;
+    });
+    // Advance generic automatic backwash sequence.
+    if(state.bwSeq.active){
+      const s=state.bwSeq;
+      const f=state.filters[s.filterId-1];
+      if(!s.paused){
+        maybeInjectBackwashFault();
+        if(!s.paused){
+          s.stepElapsed++;s.totalElapsed++;
+          const st=BW_STEPS[s.step];
+          if(s.stepElapsed>=st.dur){
+            s.step++;
+            s.stepElapsed=0;
+            if(s.step>=BW_STEPS.length){
+              f.status='RUN';f.run=0;f.head=2.1;f.turb=.045;
+              log(`Filter ${f.id} automatic backwash sequence completed; filter returned to service.`);
+              state.bwSeq={active:false,filterId:null,step:0,stepElapsed:0,totalElapsed:0,paused:false,fault:null,faultAtStep:null,faultInjected:false};
+              clearAlarm('bwfault',true);
+            }
+          }
+        }
+      }
+    }
+    const avgFilt=online.length?online.reduce((a,f)=>a+f.turb,0)/online.length:.5;
+    state.filtered += (avgFilt-state.filtered)*.18;
+
+    let effectiveCl=chlorine*(state.event==='clfeed'?.75:1);
+    const clDemand=.55 + state.rawTOC*.18 + state.filtered*2.2;
+    const ratioPenalty=Math.abs((effectiveCl/Math.max(ammonia,.01))-5.2)*.035;
+    let clTarget=Math.max(.15,effectiveCl-clDemand-ratioPenalty);
+    if(state.event==='power')clTarget*=.82;
+    state.finishCl += (clTarget-state.finishCl)*.06;
+    state.finishPH += (ph-state.finishPH)*.08;
+
+    // Backwash supply basin model.
+    // Publicly described concept: filtered water is diverted to replenish the basin.
+    // Exact refill rates, level setpoints, valve logic and wash volume below are game assumptions.
+    const activeBW=state.filters.find(f=>f.status==='BW');
+    const bwTarget=.90;
+    state.bwMakeupMGD = state.bwBasin<bwTarget ? Math.min(1.5, Math.max(.35, flow*.08)) : 0;
+    const makeupFractionPerMin=(state.bwMakeupMGD/1440)/.430;
+    state.bwBasin=Math.min(1,state.bwBasin+makeupFractionPerMin);
+
+    if(activeBW && state.bwSeq.active && !state.bwSeq.paused && BW_STEPS[state.bwSeq.step]?.water){
+      // Only water-wash/rinse phases draw materially from the modeled backwash basin.
+      const step=BW_STEPS[state.bwSeq.step];
+      const phaseRateMGD=state.bwSeq.step===5?7.8:state.bwSeq.step===4?4.8:2.8;
+      const drawFractionPerMin=(phaseRateMGD/1440)/.430;
+      state.bwBasin=Math.max(.08,state.bwBasin-drawFractionPerMin);
+    }
+
+    // Makeup water has already passed the filters but is diverted before finished-water delivery.
+    state.twtpNet=Math.max(0,flow-state.bwMakeupMGD);
+
+    if(state.bwBasin<.45) alarm('bwbasin','med','Backwash supply basin low','Filtered-water makeup is restoring the simulated 430,000-gallon backwash basin.');
+    else if(state.bwBasin>.78) clearAlarm('bwbasin',true);
+
+    // Future-state PFAS GAC simulation.
+    // Concentrations are laboratory-scale game variables; no continuous PFAS analyzer is assumed.
+    const sourceFactor=(1-blend);
+    state.pfas.influentPFOA=2.5+sourceFactor*2.0+(state.event==='pfasload'?1.8:0);
+    state.pfas.influentPFOS=1.8+sourceFactor*1.5+(state.event==='pfasload'?1.2:0);
+    state.pfas.flow=state.twtpNet;
+
+    // Media service changes very slowly during a single shift.
+    const pfasLoadFactor=(state.pfas.influentPFOA+state.pfas.influentPFOS)/6;
+    state.pfas.bedVolumes += (state.pfas.flow/1440)/0.45;
+    state.pfas.mediaRemaining=Math.max(.03,state.pfas.mediaRemaining-(state.pfas.flow/20)*pfasLoadFactor*.0000022);
+
+    let hlTarget=1.7+state.pfas.flow/20*1.1+(1-state.pfas.mediaRemaining)*.8;
+    if(state.event==='pfashl')hlTarget+=2.3;
+    state.pfas.headloss+=(hlTarget-state.pfas.headloss)*.035;
+
+    const mediaUsed=1-state.pfas.mediaRemaining;
+    const pfasRemoval=Math.max(.30,.97-mediaUsed*.38-(state.event==='pfasbreak'?.20:0));
+    const modelPFOA=state.pfas.influentPFOA*(1-pfasRemoval);
+    const modelPFOS=state.pfas.influentPFOS*(1-pfasRemoval*.98);
+
+    if(state.pfas.mediaRemaining>.45)state.pfas.breakthrough='LOW / STABLE';
+    else if(state.pfas.mediaRemaining>.25)state.pfas.breakthrough='WATCH';
+    else state.pfas.breakthrough='MEDIA REVIEW';
+
+    if(state.pfas.samplePending){
+      state.pfas.sampleTimer--;
+      if(state.pfas.sampleTimer<=0){
+        state.pfas.samplePending=false;
+        state.pfas.sampleAgeDays=0;
+        state.pfas.labPFOA=Math.max(.05,modelPFOA*(.92+Math.random()*.16));
+        state.pfas.labPFOS=Math.max(.04,modelPFOS*(.92+Math.random()*.16));
+        log(`PFAS laboratory result posted: PFOA ${state.pfas.labPFOA.toFixed(2)} ppt, PFOS ${state.pfas.labPFOS.toFixed(2)} ppt.`);
+        if(state.pfas.labPFOA>2.5||state.pfas.labPFOS>2.5){
+          alarm('pfaslab','med','PFAS laboratory breakthrough trend','Latest simulated GAC effluent laboratory result is elevated relative to the game treatment target. Review media service and confirm the result.',true);
+        }else{
+          clearAlarm('pfaslab',true);
+        }
+      }
+    }
+    if(state.minute%120===0&&!state.pfas.samplePending)state.pfas.sampleAgeDays+=1;
+
+    if(state.pfas.headloss>4.8) alarm('pfashlprocess','med','PFAS GAC hydraulic headloss high','The modeled GAC facility hydraulic headloss is elevated. Verify flow distribution and inspect the facility.');
+    else if(state.pfas.headloss<4.2) clearAlarm('pfashlprocess',true);
+
+    if(state.pfas.mediaRemaining<.20) alarm('pfasmedia','med','PFAS GAC media service low','Modeled adsorption capacity is approaching the media-planning range. Coordinate sampling and media-management planning.');
+    else if(state.pfas.mediaRemaining>.27) clearAlarm('pfasmedia',true);
+
+    updateDistribution(state.twtpNet);
+
+    // Scores
+    let qPenalty=0;
+    if(state.event==='sourcepump'&&flow>12) qPenalty+=(flow-12)*.018;
+    if(state.settled>1.0)qPenalty+=(state.settled-1)*.06;
+    if(state.filtered>.15)qPenalty+=(state.filtered-.15)*.55;
+    if(state.finishCl<1.2)qPenalty+=(1.2-state.finishCl)*.11;
+    if(state.finishCl>3.6)qPenalty+=(state.finishCl-3.6)*.035;
+    if(state.finishPH<7.5||state.finishPH>8.8)qPenalty+=.03;
+    if(online.length<5 && flow>14)qPenalty+=.04;
+    state.quality=Math.max(0,state.quality-qPenalty);
+
+    const chemWaste=Math.max(0,coag-optimalCoag-3)*.0025 + Math.max(0,ozoneEffective-oxidationNeed-.4)*.004 + Math.max(0,effectiveCl-clDemand-2.6)*.003;
+    const twtpNeed=clamp(state.cityDemand-state.otherSupply+(0.58-state.storageMG/state.storageCap)*6,5,20);
+    const energyWaste=Math.max(0,flow-twtpNeed-3)*.0015;
+    state.efficiency=Math.max(0,state.efficiency-chemWaste-energyWaste);
+
+    if(state.unresolved>0)state.response=Math.max(0,state.response-state.unresolved*.0035);
+    if(state.event==='scadacomm'&&!state.eventResponded)state.distribution=Math.max(0,state.distribution-.012);
+
+    // Alarms
+    if(state.rawTurb>8) alarm('raw','med','High raw-water turbidity','Source water has exceeded the game advisory threshold.');
+    else clearAlarm('raw',true);
+    if(state.settled>1.0) alarm('settled','med','Settled turbidity high','Check coagulant response, loading and source conditions.');
+    else if(state.settled<.8) clearAlarm('settled',true);
+    if(state.filtered>.15) alarm('filtert','hi','Combined filter effluent rising','Review individual filters, loading and upstream performance.');
+    else if(state.filtered<.11) clearAlarm('filtert',true);
+    if(state.finishCl<1.2) alarm('cllow','hi','Finished disinfectant low','Increase attention to feed output and simulated demand.');
+    else if(state.finishCl>1.4) clearAlarm('cllow',true);
+    if(state.finishCl>3.6) alarm('clhigh','med','Finished disinfectant high','Avoid unnecessary overfeed.');
+    else if(state.finishCl<3.3) clearAlarm('clhigh',true);
+    state.filters.forEach(f=>{
+      const c=filterCondition(f);
+      if(f.status==='RUN'&&c==='DUE') alarm('f'+f.id,'med','Filter '+f.id+' backwash due','The game model indicates an extended run or elevated filter condition. Review turbidity, headloss and loading before washing.');
+      else if(f.status==='RUN'&&c==='REVIEW') alarm('f'+f.id,'lo','Filter '+f.id+' backwash review','Filter is approaching the game review range; backwash is not automatically required.');
+      else if(f.status==='RUN'&&c==='NORMAL') clearAlarm('f'+f.id,true);
+    });
+
+    state.jarBonus*=.995;
+    if(state.event){
+      state.eventTimer--;
+      if(state.eventTimer<=0){
+        if(!state.eventResponded){
+          state.response=Math.max(0,state.response-8);
+          if(activeAlarms.has('event')){
+            const a=activeAlarms.get('event');
+            a.detail=state.eventMeta.msg+' RESPONSE OVERDUE — select RESPOND and choose an appropriate operator action.';
+          }
+          state.eventTimer=20;
+          renderAlarms();
+        }else{
+          if(state.event==='pumptrip'&&state.eventPump){
+            const p=state.pumps[state.eventPump-1];
+            if(p.trip){p.trip=false;p.mode='AUTO';clearAlarm('ps'+p.id,true);}
+          }
+          if(state.event==='prvfault'){state.prv.abnormal=0;clearAlarm('prv',true);}
+          log('Incident stabilized: '+state.eventMeta.name);
+          state.event=null;state.eventMeta=null;state.eventPump=null;state.eventZone=null;state.eventFilter=null;
+          clearAlarm('event',true);
+        }
+      }
+    }
+    if(!state.event && state.minute>35 && state.minute<675 && Math.random()<.0036) triggerEvent();
+
+    if(state.minute%15===0){
+      state.historyT.push(state.filtered);state.historyC.push(state.finishCl);
+      if(state.historyT.length>48){state.historyT.shift();state.historyC.shift();}
+    }
+    if(state.minute>=720) endShift();
+  }
+
+  function render(){
+    const flow=+controls.flow.value, blend=+controls.blend.value, coag=+controls.coag.value, ozone=+controls.ozone.value, chlorine=+controls.chlorine.value, ammonia=+controls.ammonia.value, ph=+controls.ph.value;
+    $('clock').textContent=clockStr();$('flowTop').textContent=flow.toFixed(1)+' MGD';
+    $('qualityTop').textContent=Math.round(state.quality);$('qScore').textContent=Math.round(state.quality);
+    $('eScore').textContent=Math.round(state.efficiency);$('rScore').textContent=Math.round(state.response);$('dScore').textContent=Math.round(state.distribution);$('distTop').textContent=Math.round(state.distribution);$('samples').textContent=state.sampleCount;
+    state.score=Math.max(0,Math.round(state.quality*.34+state.distribution*.22+state.efficiency*.14+state.response*.18+state.routineScore*.12 + state.sampleCount*1.2));
+    $('scoreTop').textContent=state.score;
+
+    $('flowRead').textContent=flow.toFixed(1)+' MGD';$('blendRead').textContent=blend+'%';$('coagRead').textContent=coag.toFixed(1)+' mg/L';
+    $('ozoneRead').textContent=ozone.toFixed(1)+' mg/L';$('chlorineRead').textContent=chlorine.toFixe
