@@ -1,0 +1,229 @@
+one / Chemicals</button>
+<button class="nav-btn" data-page="distribution"><span>07</span> Distribution</button>
+<button class="nav-btn" data-page="tanks"><span>08</span> Tanks</button>
+<button class="nav-btn" data-page="pumps"><span>09</span> Pump Stations</button>
+<button class="nav-btn nav-alarm-btn" data-page="alarms"><span>10</span> Alarm Summary <i id="navAlarmCount">0</i></button>
+<button class="nav-btn" data-page="log"><span>11</span> Operator Log</button>
+<div class="nav-spacer"></div>
+<div class="nav-status">
+<small>CONTROL MODE</small><b>AUTO / REMOTE SIM</b>
+<small>TRAINING FICTION</small>
+</div>
+</nav><div class="scada-workspace"><div class="page-header">
+<div>
+<small id="pageCrumb">SCADA / SYSTEM</small>
+<h1 id="pageTitle">System Overview</h1>
+<p id="pageSubtitle">Plant, distribution, alarms and shift priorities.</p>
+</div>
+<div class="page-mode">
+<span class="mode-light"></span>
+<div><small>SIMULATION</small><b>ONLINE</b></div>
+</div>
+</div><section class="scada-page active" data-page-id="overview"><div class="card overview">
+<div class="process">
+<div class="stage"><div class="k">Raw water</div><div class="v" id="rawTurbStage">3.2 NTU</div><div class="s">Standley / Gravel source blend</div></div>
+<div class="stage"><div class="k">Coag / Floc</div><div class="v" id="flocStage">GOOD</div><div class="s">Rapid mix + two floc basins</div></div>
+<div class="stage"><div class="k">Sedimentation</div><div class="v" id="settledStage">0.48 NTU</div><div class="s">Inclined plate settling</div></div>
+<div class="stage"><div class="k">Ozone</div><div class="v" id="ozoneStage">1.3 mg/L</div><div class="s">Taste / odor oxidation</div></div>
+<div class="stage"><div class="k">Biofilters</div><div class="v" id="filterStage">0.07 NTU</div><div class="s">6 GAC + sand filters</div></div><div class="stage">
+<div class="k">PFAS GAC</div>
+<div class="v" id="pfasStage">ONLINE</div>
+<div class="s">future-state PFAS adsorption barrier</div>
+</div>
+<div class="stage"><div class="k">Disinfection</div><div class="v" id="clStage">2.2 mg/L</div><div class="s">Chlorine contact chamber</div></div>
+<div class="stage"><div class="k">Finished water</div><div class="v" id="finishStage">STABLE</div><div class="s">Chloramine + pH trim</div></div>
+</div>
+</div><div class="card scada-card">
+<div class="section-title">SHIFT STATUS / QUICK LOOK</div>
+<div class="quicklook">
+<div><small>Active alarms</small><b id="qlAlarms">0</b></div>
+<div><small>Lowest tank</small><b id="qlTank">--</b></div>
+<div><small>Lowest zone pressure</small><b id="qlPressure">--</b></div>
+<div><small>Filter in backwash</small><b id="qlBW">NONE</b></div>
+<div><small>City demand</small><b id="qlDemand">-- MGD</b></div>
+<div><small>Distribution score</small><b id="qlDist">100</b></div>
+<div><small>Routine tasks due</small><b id="qlTasks">0</b></div></div>
+</div><div class="card" style="margin-top:14px">
+<div class="section-title">LIVE PROCESS INDICATORS</div>
+<div class="meters">
+<div class="meter"><div class="label"><span>Raw turbidity</span><span>sim</span></div><div class="num" id="rawTurb">3.2 NTU</div><div class="bar"><span id="rawTurbBar"></span></div></div>
+<div class="meter"><div class="label"><span>Settled turbidity</span><span>sim</span></div><div class="num" id="settledTurb">0.48 NTU</div><div class="bar"><span id="settledBar"></span></div></div>
+<div class="meter"><div class="label"><span>Combined filter effluent</span><span>sim</span></div><div class="num" id="filterTurb">0.07 NTU</div><div class="bar"><span id="filterBar"></span></div></div>
+<div class="meter"><div class="label"><span>Finished disinfectant</span><span>sim</span></div><div class="num" id="finishCl">2.2 mg/L</div><div class="bar"><span id="clBar"></span></div></div>
+</div>
+<div class="legend"><span><i class="turb"></i>Filter turbidity</span><span><i class="cl"></i>Finished disinfectant</span></div>
+<div class="trend"><svg id="trendSvg" preserveaspectratio="none" viewbox="0 0 800 115"></svg></div>
+</div><div class="card mission">
+<h3>SHIFT OBJECTIVE</h3>
+<p>Operate from 06:00 to 18:00. Keep finished water stable while balancing plant production with city demand, nine potable storage tank levels, five pressure-zone families, remote pumping/PRV conditions, filter loading, instrumentation, chemical-feed deviations and operator incidents.</p>
+<div class="score-row">
+<div class="scorebox"><small>Water quality</small><b id="qScore">100</b></div>
+<div class="scorebox"><small>Efficiency</small><b id="eScore">100</b></div>
+<div class="scorebox"><small>Response</small><b id="rScore">100</b></div>
+<div class="scorebox"><small>Distribution</small><b id="dScore">100</b></div>
+<div class="scorebox"><small>Samples</small><b id="samples">0</b></div>
+</div>
+</div><div class="card">
+<div class="section-title">SHIFT ACTIONS</div>
+<div class="actions">
+<button class="btn" id="sampleBtn">Run shift lab check</button>
+<button class="btn" id="inspectBtn">Field inspection</button>
+<button class="btn" id="jarBtn">Jar test</button>
+<button class="btn" id="distBtn">Distribution check</button>
+<button class="btn" id="dispatchBtn">Dispatch field response</button>
+<button class="btn danger" id="shutdownBtn">Reduce to safe flow</button>
+</div>
+<div class="notice">Actions consume simulated operator time but can improve diagnosis and response score.</div>
+</div><div class="card scada-card"><div class="section-title">SIMULATION CONTROL</div><div class="page-inline-note">Simulation speed affects game time only.</div><div class="controls"><div class="control">
+<div class="control-head"><span>Simulation speed</span><span class="read" id="speedRead">4×</span></div>
+<input id="speed" max="10" min="1" step="1" type="range" value="4"/>
+<div class="hint">1 real second = 1–10 simulated minutes.</div>
+</div></div></div></section><section class="scada-page" data-page-id="tasks">
+<div class="card task-shift-banner">
+<div>
+<small>12-HOUR SHIFT WORKLOAD</small>
+<b>ROUTINE OPERATIONS / ROUNDS / LOGBOOK</b>
+<p>Keep up with normal operator work while protecting process control and responding to alarms. High-priority alarms should take precedence over low-priority routine work.</p>
+</div>
+<div class="task-score-box"><small>ROUTINE OPS SCORE</small><b id="routineScore">100</b></div>
+</div>
+<div class="card scada-card">
+<div class="section-title">SHIFT TASK BOARD</div>
+<div class="task-summary">
+<div><small>Completed</small><b id="tasksCompleted">0</b></div>
+<div><small>Due / available</small><b id="tasksDue">0</b></div>
+<div><small>Overdue</small><b id="tasksOverdue">0</b></div>
+<div><small>Next task</small><b id="nextTask">—</b></div>
+</div>
+<div class="routine-task-list" id="routineTasks"></div>
+</div>
+<div class="card scada-card">
+<div class="section-title">ROUTINE WORK PHILOSOPHY</div>
+<div class="routine-guidance-grid">
+<div><b>SCADA IS NOT THE WHOLE SHIFT</b><span>Walkdowns, samples, inventories, housekeeping and paperwork still have to happen.</span></div>
+<div><b>PRIORITIZE ALARMS</b><span>Do not continue a low-priority housekeeping task while a serious process alarm is waiting for diagnosis.</span></div>
+<div><b>DOCUMENT FINDINGS</b><span>Rounds can identify leaks, unusual vibration, low inventory, analyzer concerns or maintenance items before they become alarms.</span></div>
+<div><b>TURNOVER MATTERS</b><span>The incoming operator needs current process status, equipment out of service, alarms, work orders and pending samples.</span></div>
+</div>
+</div>
+</section><section class="scada-page" data-page-id="treatment"><div class="card scada-card">
+<div class="section-title">TREATMENT TRAIN</div>
+<div class="mini-train">
+<div>RAW WATER</div><b>→</b><div>COAG / FLOC</div><b>→</b><div>PLATE SETTLING</div><b>→</b><div>OZONE</div><b>→</b><div>BIOFILTERS</div><b>→</b><div>DISINFECTION</div><b>→</b><div>FINISHED WATER</div>
+</div>
+<div class="page-inline-note">Use System Overview for live whole-plant indicators; use this page for production and clarification control.</div>
+</div><div class="card scada-card"><div class="section-title">TREATMENT CONTROL</div><div class="page-inline-note">Production, source blend, and clarification controls.</div><div class="controls"><div class="control">
+<div class="control-head"><span>Plant flow setpoint</span><span class="read" id="flowRead">14.0 MGD</span></div>
+<input id="flow" max="20" min="5" step=".5" type="range" value="14"/>
+<div class="hint">Higher production increases loading and shortens filter runs.</div>
+</div><div class="control">
+<div class="control-head"><span>Standley source blend</span><span class="read" id="blendRead">65%</span></div>
+<input id="blend" max="100" min="0" step="5" type="range" value="65"/>
+<div class="hint">Source blend changes raw-water character in this simulation.</div>
+</div><div class="control">
+<div class="control-head"><span>Coagulant dose</span><span class="read" id="coagRead">17.0 mg/L</span></div>
+<input id="coag" max="30" min="8" step=".5" type="range" value="17"/>
+<div class="hint">Too low hurts settling; too high wastes chemical and can destabilize performance.</div>
+</div></div></div></section><section class="scada-page" data-page-id="filters"><div class="card" style="margin-top:14px">
+<div class="section-title">BIOFILTER GALLERY / BACKWASH SYSTEM</div>
+<div class="bw-strip">
+<div class="bw-item"><small>Backwash sequence</small><b id="bwStatus">AVAILABLE</b></div>
+<div class="bw-item"><small>Backwash supply basin</small><b id="bwBasin">88%</b></div>
+<div class="bw-item"><small>Filtered-water makeup</small><b id="bwMakeup">0.0 MGD</b></div>
+<div class="bw-item"><small>Backwashes this shift</small><b id="bwCount">0</b></div>
+<div class="bw-item"><small>Game interlocks</small><b>ONE FILTER / BASIN ≥75%</b></div>
+</div>
+<div class="filter-guidance"><b>Game filter-run model:</b> normal runs are designed around roughly 144–288 hours (6–12 days).
+        Backwash is now a multi-step automatic sequence. The steps are intentionally generic to GAC/sand gravity-filter operation;
+        they are not claimed to be Thornton's exact PLC sequence, valve lineup, timing, or SOP.</div>
+<div class="bw-sequence-card">
+<div class="bw-seq-head">
+<div>
+<small>ACTIVE BACKWASH SEQUENCE</small>
+<b id="bwSeqTitle">NO ACTIVE SEQUENCE</b>
+</div>
+<span id="bwSeqMode">READY</span>
+</div>
+<div class="bw-progress" id="bwProgress"></div>
+<div class="bw-seq-status">
+<div><small>Current step</small><b id="bwCurrentStep">—</b></div>
+<div><small>Step timer</small><b id="bwStepTimer">—</b></div>
+<div><small>Sequence timer</small><b id="bwTotalTimer">—</b></div>
+<div><small>Water-use phase</small><b id="bwWaterPhase">NO</b></div>
+</div>
+<div class="bw-permissives">
+<h3>START / RUN PERMISSIVES</h3>
+<div id="bwPermissives"></div>
+</div>
+<div class="bw-actuator-panel">
+<h3>GENERIC FILTER VALVES / ACTUATORS</h3>
+<div class="actuator-grid" id="bwActuators"></div>
+</div>
+<div class="bw-fault-panel" id="bwFaultPanel">
+<div>
+<small>SEQUENCE STATUS</small>
+<b id="bwFaultText">No backwash actuator fault.</b>
+</div>
+<button class="btn danger" disabled="" id="bwFaultRespondBtn">Resolve backwash fault</button>
+</div>
+<div class="page-inline-note">
+    Typical game phases are: verify permissives → remove filter from service → lower water level →
+    media agitation / air-scour phase → low-rate wash → high-rate wash → settle/rinse →
+    restore normal filtration. Exact Thornton equipment, valve tags, air/water sequence, flow rates,
+    timings, permissives, and interlocks are intentionally not reproduced.
+  </div>
+</div><div class="filters" id="filters"></div>
+</div></section><section class="scada-page" data-page-id="pfas">
+<div class="card pfas-project-banner">
+<div>
+<small>FUTURE-STATE TRAINING MODE</small>
+<b>TWTP PFAS GRANULAR ACTIVATED CARBON FACILITY</b>
+<p>Thornton's permanent GAC PFAS project is under development/construction in 2026. This page simulates the facility after commissioning; exact final controls and hydraulic details are not reproduced.</p>
+</div>
+<span>PROJECTED COMPLETION: LATE 2028</span>
+</div>
+<div class="card scada-card">
+<div class="section-title">PFAS GAC PROCESS OVERVIEW</div>
+<div class="pfas-flow">
+<div><small>Existing biofilter effluent</small><b id="pfasInfluentFlow">14.0 MGD</b></div>
+<i>→</i>
+<div><small>PFAS GAC facility</small><b id="pfasMode">ONLINE</b></div>
+<i>→</i>
+<div><small>Downstream treatment</small><b>DISINFECTION</b></div>
+</div>
+<div class="pfas-summary">
+<div class="pfas-stat"><small>GAC hydraulic flow</small><b id="pfasFlow">14.0 MGD</b><span>modeled future-state flow</span></div>
+<div class="pfas-stat"><small>GAC headloss</small><b id="pfasHeadloss">2.1 ft</b><span>game hydraulic indicator</span></div>
+<div class="pfas-stat"><small>Media service remaining</small><b id="pfasMedia">68%</b><span>modeled adsorption capacity</span></div>
+<div class="pfas-stat"><small>Bed volumes treated</small><b id="pfasBV">18,400</b><span>service-life tracking metric</span></div>
+</div>
+</div>
+<div class="card scada-card">
+<div class="section-title">PFAS WATER-QUALITY MONITORING</div>
+<div class="pfas-lab-grid">
+<div class="pfas-lab">
+<small>Pre-GAC PFOA model</small><b id="pfasInPFOA">3.5 ppt</b>
+<span>process estimate — not an online analyzer</span>
+</div>
+<div class="pfas-lab">
+<small>Latest GAC effluent PFOA lab</small><b id="pfasOutPFOA">0.4 ppt</b>
+<span id="pfasPFOAStatus">latest verified sample</span>
+</div>
+<div class="pfas-lab">
+<small>Pre-GAC PFOS model</small><b id="pfasInPFOS">2.6 ppt</b>
+<span>process estimate — not an online analyzer</span>
+</div>
+<div class="pfas-lab">
+<small>Latest GAC effluent PFOS lab</small><b id="pfasOutPFOS">0.3 ppt</b>
+<span id="pfasPFOSStatus">latest verified sample</span>
+</div>
+<div class="pfas-lab">
+<small>Sample age</small><b id="pfasSampleAge">8 days</b>
+<span>PFAS is laboratory measured</span>
+</div>
+<div class="pfas-lab">
+<small>Breakthrough trend</small><b id="pfasTrend">LOW / STABLE</b>
+<span>derived from lab history + media service</span>
+</div>
+</div>
+<div
