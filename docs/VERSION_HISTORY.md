@@ -1,10 +1,19 @@
 # Version History
 
+## V16 — Interactive HMI
+Added a true Home screen with Start New Shift, Resume Shift, and targeted Scenario modes. Added browser localStorage save/resume, live SCADA-style schematics, animated valve OPEN/CLOSED/MOVING/FAULT states, live pump RUN/OFF/TRIP status, tank-level graphics, PRV fault visualization, and interactive generalized training valves. Treatment, filters/backwash, PFAS, chemicals, distribution, tanks, and pump-station pages now include live HMI-style schematics.
+
+## V15 — Site Splash / SCADA Schematics
+Introduced the plant-image splash-screen concept and generalized SCADA-style tank, pipe, pump, and valve schematics.
+
+## V14 — Modern SCADA Theme
+Replaced the heavy blue appearance with a more neutral graphite modern HMI theme, teal/green status accents, cleaner UI typography, and tabular-number readouts.
+
 ## V13 — pH, Alkalinity & Caustic Control
 Added dynamic raw-water pH and alkalinity, post-coagulation alkalinity tracking, and operator-adjustable caustic-soda trim. Ferric coagulation now consumes alkalinity in the game model, while caustic increases finished alkalinity and pH through a buffered response. Lab checks now include raw pH, raw alkalinity, post-coag alkalinity, finished pH, finished alkalinity, and caustic dose. New incidents/alarms include source alkalinity/pH shifts, caustic-feed deviations, low/high finished pH, and low finished alkalinity.
 
 ## V12 — Randomized Shifts / Real-Time Pace
-Slowed the simulation clock so the speed range is now **30 simulated seconds to 1 simulated minute per real second**. The former 1–10 simulated-minutes-per-second range was removed to give the operator more time to navigate SCADA, recognize alarms, diagnose problems, and respond. V12 also preserves the randomized-shift system introduced in V11.
+Slowed the simulation clock so the speed range is now **30 simulated seconds to 1 simulated minute per real second**. The former 1–10 simulated-minutes-per-second range was removed. V12 also preserves the randomized-shift system introduced in V11.
 
 ## V11 — Randomized Shifts
 Added randomized shift handoffs and shift-specific incident pools. Each new shift varies production, source blend, water-quality starting values, chemical setpoints, storage, zone conditions, backwash-basin level, filter age/headloss/turbidity, and PFAS GAC status. Most shifts inherit zero to two minor imperfect conditions. Each shift receives roughly 8–11 possible incident types, and incident types are removed from that shift's remaining pool after they occur to reduce repetition. A shift can also begin with an active incident already present at turnover.
