@@ -4,53 +4,61 @@ A browser-based educational water-treatment operator simulation inspired by publ
 
 ## Status
 
-Current game version: **V10 — Routine Shift Work**
+Current game version: **V11 — Randomized Shifts**
 
-The simulator models a 12-hour operator shift with treatment-process control, filters and backwashing, chemical feed, distribution monitoring, alarms, PFAS GAC future-state training, and routine operator workload.
+The simulator models a 12-hour operator shift with treatment-process control, filters and backwashing, chemical feed, distribution monitoring, alarms, PFAS GAC future-state training, routine operator workload, and randomized shift handoffs.
+
+## V11: every shift is different
+
+Each new shift/reload now generates a randomized starting handoff rather than resetting to one perfect baseline.
+
+Starting conditions can vary across:
+
+- TWTP production and source blend
+- raw-water turbidity, TOC, and odor loading
+- settled and filtered turbidity
+- finished disinfectant residual and pH
+- chemical-control setpoints
+- city demand and other-system supply
+- potable-storage levels and pressure-zone conditions
+- backwash-supply basin level
+- individual filter run age, headloss, and turbidity
+- future-state PFAS GAC headloss, media service, and sample age
+
+Most shifts inherit one or two minor imperfect conditions from the prior shift, while some begin relatively stable. Examples include a filter already approaching backwash review, a recovering backwash basin, marginal disinfectant residual, elevated raw turbidity, reduced storage, or PFAS GAC media already in a watch range.
+
+The overall game contains a larger incident catalog, but each shift receives a **randomized subset of about 8–11 incident types** drawn from treatment/process, equipment/instrumentation, distribution, and PFAS categories. Once an incident type occurs, it is removed from that shift's remaining incident pool to reduce repetitive events. A shift may also begin with an active incident already present at turnover.
 
 ## Major features
 
 - SCADA-style multi-page operator interface
 - 12-hour simulated shift
-- Raw-water and treatment-process changes
-- Coagulant, ozone, chlorine, ammonia, and pH controls
-- Chemical dose displays in mg/L, lb/MG, lb/day, and simulated feed-rate units
-- Six biofilters with staggered filter runs
-- Multi-step automatic backwash simulation
-- Backwash-supply basin inventory and refill from filtered water
-- Generic valve/actuator command-versus-feedback failures during backwash
-- Distribution demand, storage, pressure-zone, pump-station, and PRV monitoring
-- Main-break, fire-flow, pump-trip, communications, power, and process incidents
-- Alarm acknowledgement plus operator-response decision workflow
-- Future-state PFAS granular activated carbon (GAC) treatment page
+- randomized shift profiles and handoff conditions
+- shift-specific randomized incident pools
+- raw-water and treatment-process changes
+- coagulant, ozone, chlorine, ammonia, and pH controls
+- chemical dose displays in mg/L, lb/MG, lb/day, and simulated feed-rate units
+- six biofilters with staggered filter runs
+- multi-step automatic backwash simulation
+- backwash-supply basin inventory and refill from filtered water
+- generic valve/actuator command-versus-feedback failures during backwash
+- distribution demand, storage, pressure-zone, pump-station, and PRV monitoring
+- main-break, fire-flow, pump-trip, communications, power, and process incidents
+- alarm acknowledgement plus operator-response decision workflow
+- future-state PFAS granular activated carbon (GAC) treatment page
 - PFAS laboratory-result workflow in parts per trillion rather than a fake continuous analyzer
-- Routine rounds, lab checks, chemical inventory, housekeeping, maintenance coordination, and shift turnover
-- Water-quality, efficiency, alarm-response, distribution, and routine-operations scoring
+- routine rounds, lab checks, chemical inventory, housekeeping, maintenance coordination, and shift turnover
+- water-quality, efficiency, alarm-response, distribution, and routine-operations scoring
 
 ## Run locally
 
-No build step is required. Because the GitHub deployment bundle is loaded from static fragment files, serve the repository through a small local HTTP server rather than double-clicking `index.html`.
-
-For example:
-
-```bash
-python -m http.server 8000
-```
-
-Then open `http://localhost:8000` in a browser.
+The GitHub build is packaged for HTTP/static hosting. The easiest options are GitHub Pages or another simple local static web server.
 
 ## GitHub Pages
 
-The repository is ready to run from GitHub Pages.
+This project is designed to work as a static GitHub Pages site from the repository root.
 
-In GitHub:
-
-1. Open **Settings → Pages**.
-2. Under **Build and deployment**, choose **Deploy from a branch**.
-3. Select **main** and **/(root)**.
-4. Save.
-
-The root `index.html` loads the V10 static simulator bundle from `app/parts/` and launches the game in the browser.
+To enable it: **Settings → Pages → Deploy from a branch → `main` → `/(root)`**.
 
 ## Important disclaimer
 
@@ -68,7 +76,10 @@ The following are simplified, fictionalized, or intentionally omitted:
 - exact tank, station, valve, or infrastructure locations
 - credentials, communications architecture, or cybersecurity details
 - real operating SOPs and emergency procedures
+- actual operating-condition distributions or alarm frequencies
 - final PFAS facility control details that are not publicly established
+
+Randomized starting values and incident frequencies are training-game assumptions, not City of Thornton operational data.
 
 Do not use this simulator as an operating procedure, regulatory reference, or substitute for plant-specific training.
 
@@ -80,17 +91,15 @@ Do not use this simulator as an operating procedure, regulatory reference, or su
 ├── README.md
 ├── .nojekyll
 ├── app/
+│   ├── v11-randomized-shifts.js
 │   └── parts/
 │       ├── part-00.txt
-│       ├── ...
-│       └── part-09.txt
+│       └── ... part-09.txt
 └── docs/
     ├── REALISM_BOUNDARIES.md
     └── VERSION_HISTORY.md
 ```
 
-The files in `app/parts/` concatenate to the standalone V10 simulator source. This keeps the current single-file game intact while allowing it to be published through the connected GitHub workflow.
-
 ## Development direction
 
-A future refactor can split the simulator into conventional CSS and JavaScript modules, add trend-history screens, scheduled maintenance, shift scenarios, and additional educational explanations while preserving the project's infrastructure-safety boundaries.
+Future versions can further modularize the application, add trend-history screens, scheduled maintenance, additional shift scenarios, and more educational explanations while preserving the project's infrastructure-safety boundaries.
