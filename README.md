@@ -4,37 +4,36 @@ A browser-based educational water-treatment operator simulation inspired by publ
 
 ## Status
 
-Current game version: **V11 — Randomized Shifts**
+Current game version: **V12 — Randomized Shifts / Real-Time Pace**
 
 The simulator models a 12-hour operator shift with treatment-process control, filters and backwashing, chemical feed, distribution monitoring, alarms, PFAS GAC future-state training, routine operator workload, and randomized shift handoffs.
 
-## V11: every shift is different
+## V12 simulation speed
 
-Each new shift/reload now generates a randomized starting handoff rather than resetting to one perfect baseline.
+The old 1–10 simulated-minutes-per-real-second range has been removed.
 
-Starting conditions can vary across:
+The speed control now has two settings:
 
-- TWTP production and source blend
-- raw-water turbidity, TOC, and odor loading
-- settled and filtered turbidity
-- finished disinfectant residual and pH
-- chemical-control setpoints
-- city demand and other-system supply
-- potable-storage levels and pressure-zone conditions
-- backwash-supply basin level
-- individual filter run age, headloss, and turbidity
-- future-state PFAS GAC headloss, media service, and sample age
+- **30 sec/s** — 1 real second advances the game by 30 simulated seconds.
+- **1 min/s** — 1 real second advances the game by 1 simulated minute.
 
-Most shifts inherit one or two minor imperfect conditions from the prior shift, while some begin relatively stable. Examples include a filter already approaching backwash review, a recovering backwash basin, marginal disinfectant residual, elevated raw turbidity, reduced storage, or PFAS GAC media already in a watch range.
+This gives the player more time to navigate SCADA pages, recognize alarms, diagnose conditions, and make operating decisions.
 
-The overall game contains a larger incident catalog, but each shift receives a **randomized subset of about 8–11 incident types** drawn from treatment/process, equipment/instrumentation, distribution, and PFAS categories. Once an incident type occurs, it is removed from that shift's remaining incident pool to reduce repetitive events. A shift may also begin with an active incident already present at turnover.
+## Randomized shifts
+
+Each new shift/reload generates a randomized starting handoff rather than resetting to one perfect baseline.
+
+Starting conditions can vary across production, source blend, raw/process water quality, chemical setpoints, city demand, storage, pressure zones, backwash-basin level, filter run age/headloss/turbidity, and future-state PFAS GAC status.
+
+Most shifts inherit zero to two minor imperfect conditions from the prior shift. Examples include a filter already approaching backwash review, a recovering backwash basin, marginal disinfectant residual, elevated raw turbidity, reduced storage, or PFAS GAC media in a watch range.
+
+Each shift receives a randomized subset of about **8–11 incident types** from the larger incident catalog. Once an incident type occurs, it is removed from that shift's remaining pool to reduce repetition. A shift may also begin with an active incident already present at turnover.
 
 ## Major features
 
 - SCADA-style multi-page operator interface
 - 12-hour simulated shift
-- randomized shift profiles and handoff conditions
-- shift-specific randomized incident pools
+- randomized shift handoffs and incident pools
 - raw-water and treatment-process changes
 - coagulant, ozone, chlorine, ammonia, and pH controls
 - chemical dose displays in mg/L, lb/MG, lb/day, and simulated feed-rate units
@@ -50,10 +49,6 @@ The overall game contains a larger incident catalog, but each shift receives a *
 - routine rounds, lab checks, chemical inventory, housekeeping, maintenance coordination, and shift turnover
 - water-quality, efficiency, alarm-response, distribution, and routine-operations scoring
 
-## Run locally
-
-The GitHub build is packaged for HTTP/static hosting. The easiest options are GitHub Pages or another simple local static web server.
-
 ## GitHub Pages
 
 This project is designed to work as a static GitHub Pages site from the repository root.
@@ -64,22 +59,9 @@ To enable it: **Settings → Pages → Deploy from a branch → `main` → `/(ro
 
 This is an **independent educational simulation**. It is **not affiliated with, endorsed by, or an official product of the City of Thornton, Colorado**.
 
-The simulation uses public, high-level treatment concepts as inspiration, but it intentionally does **not** reproduce actual control-system configuration or operationally sensitive details.
+The simulation intentionally does **not** reproduce actual PLC/RTU/SCADA logic, exact alarm/trip setpoints, real valve or instrument tags, real backwash control logic, actual pump curves, infrastructure locations, communications/security details, or real operating SOPs.
 
-The following are simplified, fictionalized, or intentionally omitted:
-
-- actual PLC / RTU / SCADA logic
-- exact alarm and trip setpoints
-- real valve or instrument tags
-- exact backwash sequence logic and timing
-- actual pump curves and control strategies
-- exact tank, station, valve, or infrastructure locations
-- credentials, communications architecture, or cybersecurity details
-- real operating SOPs and emergency procedures
-- actual operating-condition distributions or alarm frequencies
-- final PFAS facility control details that are not publicly established
-
-Randomized starting values and incident frequencies are training-game assumptions, not City of Thornton operational data.
+Randomized values, incident frequencies, and simulation timing are gameplay assumptions, not City of Thornton operational data.
 
 Do not use this simulator as an operating procedure, regulatory reference, or substitute for plant-specific training.
 
@@ -91,7 +73,7 @@ Do not use this simulator as an operating procedure, regulatory reference, or su
 ├── README.md
 ├── .nojekyll
 ├── app/
-│   ├── v11-randomized-shifts.js
+│   ├── patch-v12.js
 │   └── parts/
 │       ├── part-00.txt
 │       └── ... part-09.txt
@@ -99,7 +81,3 @@ Do not use this simulator as an operating procedure, regulatory reference, or su
     ├── REALISM_BOUNDARIES.md
     └── VERSION_HISTORY.md
 ```
-
-## Development direction
-
-Future versions can further modularize the application, add trend-history screens, scheduled maintenance, additional shift scenarios, and more educational explanations while preserving the project's infrastructure-safety boundaries.
