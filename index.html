@@ -12,8 +12,7 @@
   <script src="app/patch-v13.js?v=13"></script>
   <script src="app/patch-v14.js?v=14"></script>
   <script src="app/patch-v16.js?v=16"></script>
-  <script src="app/patch-v16-controls.js?v=16.1"></script>
-  <script src="app/patch-v16-controls-finalize.js?v=16.1.1"></script>
+  <script src="app/patch-v16-controls.js?v=16.1.2"></script>
 </head>
 <body>
   <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.1…</b><span>Interactive SCADA-style training simulation with working Start New Shift, Resume Shift, and Scenario controls. Not an actual control system.</span><div class="err" id="err"></div></div>
@@ -30,13 +29,11 @@
         if(typeof patchSimulatorSourceV14!=='function') throw new Error('V14 theme patch module did not load.');
         if(typeof patchSimulatorSourceV16!=='function') throw new Error('V16 interactive HMI patch module did not load.');
         if(typeof patchSimulatorSourceV16Controls!=='function') throw new Error('V16.1 controls patch module did not load.');
-        if(typeof patchSimulatorSourceV16Finalize!=='function') throw new Error('V16.1 finalize patch module did not load.');
         source=patchSimulatorSource(source);
         source=patchSimulatorSourceV13(source);
         source=patchSimulatorSourceV14(source);
         source=patchSimulatorSourceV16(source);
         source=patchSimulatorSourceV16Controls(source);
-        source=patchSimulatorSourceV16Finalize(source);
         document.open();
         document.write(source);
         document.close();
