@@ -1,0 +1,196 @@
+ class="chemical-basis-note">
+<b>Important:</b> PFAS is shown in parts per trillion (ppt). The simulator intentionally has no continuous PFAS analyzer.
+      Thornton's laboratory has developed in-house PFAS analysis capability; operators use hydraulic/process indications and laboratory sampling to manage the adsorption system.
+    </div>
+</div>
+<div class="card scada-card">
+<div class="section-title">PFAS OPERATOR ACTIONS</div>
+<div class="actions pfas-actions">
+<button class="btn" id="pfasSampleBtn">Collect PFAS process sample</button>
+<button class="btn" id="pfasInspectBtn">Inspect GAC facility</button>
+<button class="btn" id="pfasMediaBtn">Review media service</button>
+</div>
+<div class="page-inline-note" id="pfasActionNote">No PFAS laboratory sample is currently pending.</div>
+</div>
+<div class="card scada-card">
+<div class="section-title">PFAS TREATMENT OPERATING CONCEPT</div>
+<div class="pfas-concept-grid">
+<div><b>ADSORPTION</b><span>PFAS is captured on GAC media rather than destroyed or chemically dosed.</span></div>
+<div><b>BREAKTHROUGH</b><span>Removal gradually decreases as adsorption sites are consumed; laboratory trends guide media-management decisions.</span></div>
+<div><b>MEDIA CHANGEOUT</b><span>Spent GAC eventually requires replacement/reactivation through planned maintenance rather than an operator dose adjustment.</span></div>
+<div><b>HYDRAULICS</b><span>Flow and headloss are continuously observable; PFAS concentration itself is not.</span></div>
+</div>
+</div>
+</section><section class="scada-page" data-page-id="chemicals"><div class="card scada-card">
+<div class="section-title">CHEMICAL PROCESS STATUS</div>
+<div class="chemical-feed-grid">
+<div class="feedcard">
+<div class="feedhead"><b>FERRIC COAGULANT</b><span>AUTO / FLOW PACED</span></div>
+<div class="feedrow"><small>Dose SP</small><b id="ferricDoseSP">17.0 mg/L</b></div>
+<div class="feedrow"><small>Equivalent dose</small><b id="ferricLbMG">141.8 lb/MG</b></div>
+<div class="feedrow"><small>Calculated feed demand</small><b id="ferricLbDay">1,985 lb/day</b></div>
+<div class="feedrow"><small>Sim liquid feed</small><b id="ferricGPH">7.2 gal/hr</b></div>
+<div class="feedrow"><small>Metering pump output</small><b id="ferricPumpPct">38%</b></div>
+</div>
+<div class="feedcard">
+<div class="feedhead"><b>OZONE</b><span>GENERATOR CONTROL</span></div>
+<div class="feedrow"><small>Applied dose SP</small><b id="ozoneDoseSP">1.3 mg/L</b></div>
+<div class="feedrow"><small>Equivalent dose</small><b id="ozoneLbMG">10.8 lb/MG</b></div>
+<div class="feedrow"><small>Calculated ozone demand</small><b id="ozoneLbDay">152 lb/day</b></div>
+<div class="feedrow"><small>Generator output</small><b id="ozoneOutputPct">42%</b></div>
+<div class="feedrow"><small>Applied process value</small><b id="chemOzoneStatus">1.3 mg/L</b></div>
+</div>
+<div class="feedcard">
+<div class="feedhead"><b>CHLORINE / HYPOCHLORITE</b><span>AUTO / FLOW PACED</span></div>
+<div class="feedrow"><small>Dose SP</small><b id="chlorineDoseSP">2.6 mg/L</b></div>
+<div class="feedrow"><small>Equivalent dose</small><b id="chlorineLbMG">21.7 lb/MG</b></div>
+<div class="feedrow"><small>Calculated feed demand</small><b id="chlorineLbDay">304 lb/day</b></div>
+<div class="feedrow"><small>Sim liquid feed</small><b id="chlorineGPH">2.1 gal/hr</b></div>
+<div class="feedrow"><small>Metering pump output</small><b id="chlorinePumpPct">34%</b></div>
+<div class="feedrow"><small>Finished residual PV</small><b id="chemClStatus">2.2 mg/L</b></div>
+</div>
+<div class="feedcard">
+<div class="feedhead"><b>AMMONIA</b><span>AUTO / RATIO PACED</span></div>
+<div class="feedrow"><small>Dose SP</small><b id="ammoniaDoseSP">0.45 mg/L</b></div>
+<div class="feedrow"><small>Equivalent dose</small><b id="ammoniaLbMG">3.8 lb/MG</b></div>
+<div class="feedrow"><small>Calculated feed demand</small><b id="ammoniaLbDay">53 lb/day</b></div>
+<div class="feedrow"><small>Sim liquid feed</small><b id="ammoniaGPH">0.5 gal/hr</b></div>
+<div class="feedrow"><small>Metering pump output</small><b id="ammoniaPumpPct">28%</b></div>
+<div class="feedrow"><small>Feed PV</small><b id="chemAmmoniaStatus">0.45 mg/L</b></div>
+</div>
+<div class="feedcard">
+<div class="feedhead"><b>FINISHED WATER pH</b><span>TRIM CONTROL</span></div>
+<div class="feedrow"><small>pH target SP</small><b id="phTargetSP">8.20</b></div>
+<div class="feedrow"><small>Finished pH PV</small><b id="chemPHStatus">8.20</b></div>
+<div class="feedrow"><small>Trim pump output</small><b id="phPumpPct">30%</b></div>
+<div class="feedrow"><small>Control mode</small><b>AUTO</b></div>
+</div>
+</div>
+<div class="chemical-basis-note">
+<b>Display basis:</b> mg/L is the primary operator dose setpoint. Equivalent lb/MG = mg/L × 8.34.
+  lb/day changes with plant flow. Simulated gal/hr and pump-output values use fictional product-density/strength assumptions for gameplay and are not Thornton chemical specifications.
+</div>
+</div><div class="card scada-card"><div class="section-title">OZONE / DISINFECTION / PH</div><div class="page-inline-note">Chemical-feed controls are simplified game variables, not Thornton operating setpoints.</div><div class="controls"><div class="control">
+<div class="control-head"><span>Ozone dose</span><span class="read" id="ozoneRead">1.3 mg/L</span></div>
+<input id="ozone" max="3" min=".2" step=".1" type="range" value="1.3"/>
+<div class="hint">Balance organics/taste-and-odor control against energy use.</div>
+</div><div class="control">
+<div class="control-head"><span>Chlorine dose</span><span class="read" id="chlorineRead">2.6 mg/L</span></div>
+<input id="chlorine" max="5" min=".5" step=".1" type="range" value="2.6"/>
+<div class="hint">Maintain simulated disinfection performance without overdosing.</div>
+</div><div class="control">
+<div class="control-head"><span>Ammonia feed</span><span class="read" id="ammoniaRead">0.45 mg/L</span></div>
+<input id="ammonia" max="1" min=".1" step=".05" type="range" value=".45"/>
+<div class="hint">Used here to model conversion to a stable chloramine residual.</div>
+</div><div class="control">
+<div class="control-head"><span>Finished pH target</span><span class="read" id="phRead">8.20</span></div>
+<input id="ph" max="9.2" min="7.2" step=".05" type="range" value="8.2"/>
+<div class="hint">A simplified corrosion-control/stability variable.</div>
+</div></div></div></section><section class="scada-page" data-page-id="distribution"><div class="card" style="margin-top:14px">
+<div class="section-title">DISTRIBUTION OVERVIEW / REMOTE SCADA</div>
+<div class="dist-summary">
+<div class="diststat"><small>System demand</small><b id="cityDemand">31.0 MGD</b><em id="demandTrend">normal system demand</em></div>
+<div class="diststat"><small>TWTP net to system</small><b id="twtpSupply">14.0 MGD</b><em>gross plant flow less BW-basin makeup</em></div>
+<div class="diststat"><small>Wes Brown contribution</small><b id="otherSupply">17.0 MGD</b><em>simulated second-plant dispatch</em></div>
+<div class="diststat"><small>Potable storage</small><b id="storagePctMain">62%</b><em id="storageMG">modeled stored volume</em></div>
+</div>
+<div class="infra-strip">
+<div class="infra"><b>5</b><small>main pressure-zone families</small></div>
+<div class="infra"><b>13+</b><small>published subzone/service labels</small></div>
+<div class="infra"><b>7</b><small>distribution pump stations</small></div>
+<div class="infra"><b>9</b><small>currently reported potable tanks</small></div>
+<div class="infra"><b>~65</b><small>PRVs in planning model</small></div>
+</div>
+<div class="dist-grid">
+<div class="distpanel">
+<h3>PRESSURE-ZONE FAMILIES</h3>
+<div class="zonegrid" id="zones"></div>
+</div>
+</div>
+<div class="prvrow">
+<div class="prvbox"><small>Pressure reducing valves</small><b id="prvHealth">65 modeled / normal</b><div class="prvbar"><i id="prvBar"></i></div></div>
+<div class="prvbox"><small>Operator focus</small><b id="distFocus">Balance production, tank levels and zone pressures.</b></div>
+</div>
+<div class="dist-note">Public-system architecture is represented at a high level. Exact station/tank identities, capacities, HGLs, coordinates, setpoints and real SCADA logic are intentionally fictionalized.</div>
+</div><div class="card scada-card">
+<div class="section-title">DISTRIBUTION OPERATOR ACTIONS</div>
+<div class="actions dist-action-grid">
+<button class="btn" id="distCheckProxy">Run distribution check</button>
+<button class="btn" id="dispatchProxy">Dispatch field response</button>
+</div>
+<div class="page-inline-note">These buttons call the same game actions available from the System Overview shift-actions panel.</div>
+</div></section><section class="scada-page" data-page-id="tanks"><div class="card scada-card"><div class="section-title">POTABLE STORAGE TANKS</div><div class="page-inline-note">Nine modeled active potable tanks. Tank labels/capacities are game abstractions.</div><div class="tankpanel">
+<h3>TANK LEVEL OVERVIEW</h3>
+<div class="tankgrid" id="tanks"></div>
+</div></div></section><section class="scada-page" data-page-id="pumps"><div class="card scada-card"><div class="section-title">DISTRIBUTION PUMP STATIONS</div><div class="page-inline-note">Seven modeled distribution stations; station identities and actual controls are fictionalized.</div><div class="distpanel">
+<h3>REMOTE PUMP STATUS / COMMANDS</h3>
+<div class="stationgrid" id="pumpStations"></div>
+</div></div></section><section class="scada-page" data-page-id="alarms"><div class="card scada-card">
+<div class="section-title">INCIDENT RESPONSE</div>
+<div class="page-inline-note"><b>ACK is not corrective action.</b> Acknowledging an alarm only records that the operator saw it. Scenario alarms remain active until you select <b>RESPOND</b>, choose an appropriate high-level action, and the simulated condition stabilizes. Exact Thornton SOPs, setpoints and control sequences are not reproduced.</div>
+</div><div class="card alarm-banner">
+<div>
+<small>ALARM PHILOSOPHY</small>
+<b>ACKNOWLEDGE → DIAGNOSE → RESPOND → VERIFY</b>
+</div>
+<span id="alarmPageState">NO ACTIVE ALARMS</span>
+</div><div class="card">
+<div class="section-title">ALARMS &amp; ADVISORIES</div>
+<div class="alarms" id="alarms"><div style="color:var(--muted);font-size:12px;padding:8px 0">No active alarms.</div></div>
+</div></section><section class="scada-page" data-page-id="log"><div class="card">
+<div class="section-title">OPERATOR LOG</div>
+<div class="log" id="log"></div>
+</div><div class="card">
+<div class="section-title">TRAINING NOTE</div>
+<div class="notice">
+        This is an educational simulation inspired by publicly described Thornton process units. Setpoints, alarms, chemical ranges, timing, interlocks, tank/station identities, individual capacities, HGLs, setpoints and event logic are invented/simplified for gameplay and are <b>not</b> Thornton SOPs. Public information supports a shared backwash facility with one duty and one standby pump; the game therefore enforces one filter backwash at a time.
+      </div>
+</div></section></div></main>
+<div class="footer">Thornton WTP Operator Simulator V10 · SCADA-style training fiction. A 12-hour shift now includes scheduled rounds, lab/process checks, chemical inventory, housekeeping, filter/distribution reviews, maintenance coordination and turnover in addition to process alarms.</div>
+<div class="modal" id="modal">
+<div class="modalbox" id="modalBox"></div>
+</div>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const state = {
+    minute: 0, score:0, quality:100, efficiency:100, response:100, distribution:100, routineScore:100, sampleCount:0,
+    rawTurb:3.2, rawTOC:3.0, odor:1.0, settled:0.48, filtered:0.07, finishCl:2.2, finishPH:8.2,
+    demand:31, cityDemand:31, otherSupply:17, storageCap:29.75, storageMG:18.4, storageTrend:0,
+    event:null, eventTimer:0, eventPump:null, eventZone:null, eventFilter:null, eventMeta:null, eventResponded:false, unresolved:0, jarBonus:0,
+    bwBasin:.88, bwMakeupMGD:0, twtpNet:14, bwCount:0,
+    bwSeq:{active:false,filterId:null,step:0,stepElapsed:0,totalElapsed:0,paused:false,fault:null,faultAtStep:null,faultInjected:false},
+    historyT:[], historyC:[], ended:false,
+    pfas:{
+      mode:'ONLINE',flow:14,headloss:2.1,mediaRemaining:.68,bedVolumes:18400,
+      influentPFOA:3.5,influentPFOS:2.6,labPFOA:.4,labPFOS:.3,
+      sampleAgeDays:8,samplePending:false,sampleTimer:0,breakthrough:'LOW / STABLE',
+      maintenance:false
+    },
+    prv:{total:65,abnormal:0},
+    zones:[
+      {id:'1',base:66,pressure:66,weight:.27,sub:['1']},
+      {id:'2',base:64,pressure:64,weight:.12,sub:['2']},
+      {id:'3',base:70,pressure:70,weight:.34,sub:['3','3A','3B','3C','3D','3E','3F','3H']},
+      {id:'4',base:72,pressure:72,weight:.20,sub:['4','4A','4B']},
+      {id:'5',base:68,pressure:68,weight:.07,sub:['5']}
+    ],
+    tanks:[
+      {id:'T-1',zone:0,cap:4.00,level:66},{id:'T-2',zone:0,cap:3.20,level:61},
+      {id:'T-3',zone:1,cap:2.40,level:64},{id:'T-4',zone:2,cap:4.50,level:58},
+      {id:'T-5',zone:2,cap:3.50,level:63},{id:'T-6',zone:2,cap:2.00,level:69},
+      {id:'T-7',zone:3,cap:3.10,level:57},{id:'T-8',zone:3,cap:4.00,level:65},
+      {id:'T-9',zone:4,cap:3.05,level:60}
+    ],
+    pumps:[
+      {id:1,label:'HIGH SERVICE',zone:0,mode:'AUTO',run:true,trip:false,discharge:72,threshold:27},
+      {id:2,label:'ZONE 2 PS',zone:1,mode:'AUTO',run:false,trip:false,discharge:70,threshold:31},
+      {id:3,label:'ZONE 3 PS',zone:2,mode:'AUTO',run:true,trip:false,discharge:76,threshold:29},
+      {id:4,label:'ZONE 3A PS',zone:2,mode:'AUTO',run:true,trip:false,discharge:79,threshold:32},
+      {id:5,label:'ZONE 4 PS-A',zone:3,mode:'AUTO',run:false,trip:false,discharge:81,threshold:34},
+      {id:6,label:'ZONE 4 PS-B',zone:3,mode:'AUTO',run:false,trip:false,discharge:83,threshold:37},
+      {id:7,label:'ZONE 5 PS',zone:4,mode:'AUTO',run:false,trip:false,discharge:85,threshold:35}
+    ],
+    filters:[
+      {id:1,run:18, head:2.4,turb:.045,status:'RUN',bw:0},
+      {id:2,run:61, head:2.9,turb:.047,status:'RU
