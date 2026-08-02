@@ -1,0 +1,225 @@
+N',bw:0},
+      {id:3,run:104,head:3.5,turb:.049,status:'RUN',bw:0},
+      {id:4,run:151,head:4.3,turb:.052,status:'RUN',bw:0},
+      {id:5,run:203,head:5.4,turb:.057,status:'RUN',bw:0},
+      {id:6,run:252,head:6.8,turb:.066,status:'RUN',bw:0}
+    ]
+  };
+  const controls = {
+    flow:$('flow'), blend:$('blend'), coag:$('coag'), ozone:$('ozone'),
+    chlorine:$('chlorine'), ammonia:$('ammonia'), ph:$('ph'), speed:$('speed')
+  };
+  const activeAlarms = new Map();
+
+  const ROUTINE_TASKS=[
+    {id:'turnover',due:10,duration:10,priority:'HIGH',title:'Shift turnover & log review',desc:'Review prior-shift log, active alarms, equipment out of service, work orders, pending samples and distribution status.',type:'turnover'},
+    {id:'round1',due:45,duration:18,priority:'NORMAL',title:'First plant round',desc:'Walk treatment areas; check pumps, chemical-feed equipment, leaks, unusual noise/vibration, housekeeping and local indications.',type:'round'},
+    {id:'lab1',due:90,duration:15,priority:'NORMAL',title:'Morning process / lab check',desc:'Verify key process values with routine bench/grab checks and compare them with online indications.',type:'lab'},
+    {id:'dist1',due:135,duration:10,priority:'NORMAL',title:'Distribution & storage review',desc:'Review system demand, tank levels, zone pressures and remote pump-station status.',type:'distribution'},
+    {id:'chem',due:190,duration:15,priority:'NORMAL',title:'Chemical inventory / feed check',desc:'Review bulk inventory, day tanks/feed equipment, calculated demand versus feed and delivery/reorder needs.',type:'chemical'},
+    {id:'house',due:250,duration:15,priority:'LOW',title:'Housekeeping & safety walk',desc:'Address routine cleanliness, trip hazards, minor spills/drips, access routes and general operator housekeeping.',type:'housekeeping'},
+    {id:'filterreview',due:315,duration:10,priority:'NORMAL',title:'Filter condition review',desc:'Review six filter runs, turbidity/headloss trends, backwash basin condition and whether any filter actually needs attention.',type:'filters'},
+    {id:'lab2',due:375,duration:15,priority:'NORMAL',title:'Mid-shift process / lab check',desc:'Repeat routine process verification and document meaningful deviations from the first shift check.',type:'lab'},
+    {id:'maintenance',due:440,duration:12,priority:'NORMAL',title:'Maintenance / work-order coordination',desc:'Review equipment abnormalities, open work items and any operator findings that require maintenance follow-up.',type:'maintenance'},
+    {id:'dist2',due:510,duration:10,priority:'NORMAL',title:'Afternoon distribution review',desc:'Recheck increasing demand, pressure-zone balance, storage trajectory and pumping status.',type:'distribution'},
+    {id:'pfasround',due:555,duration:10,priority:'LOW',title:'PFAS GAC future-state check',desc:'Review future-state GAC flow/headloss, sample status and media-service indicators.',type:'pfas'},
+    {id:'round2',due:620,duration:18,priority:'NORMAL',title:'Final plant round & inventories',desc:'Walk the plant again, verify equipment condition and note anything the next shift must know.',type:'round'},
+    {id:'turnoverprep',due:685,duration:15,priority:'HIGH',title:'End-of-shift log & turnover preparation',desc:'Document plant/distribution status, alarms, backwash activity, samples, work orders and outstanding issues for the incoming operator.',type:'turnover'}
+  ].map(t=>({...t,completed:false,completedAt:null,overdueHits:0,finding:null}));
+
+  function shiftClock(minute){
+    const total=360+minute,h=Math.floor(total/60)%24,m=total%60;
+    return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+  }
+
+  function highPriorityAlarmWaiting(){
+    return [...activeAlarms.values()].some(a=>a.sev==='hi'&&!a.acked);
+  }
+
+  function routineTaskOutcome(t){
+    const worst=[...state.filters].filter(f=>f.status==='RUN').sort((a,b)=>(b.head+b.run/80+b.turb*25)-(a.head+a.run/80+a.turb*25))[0];
+    const lowTank=[...state.tanks].sort((a,b)=>a.level-b.level)[0];
+    const lowZone=[...state.zones].sort((a,b)=>a.pressure-b.pressure)[0];
+    let text='';
+    if(t.type==='turnover') text=`Reviewed alarms/logs and current plant status. ${activeAlarms.size} active alarm(s) at completion.`;
+    if(t.type==='round') text=`Plant walkdown completed. Highest-attention running filter is F${worst?.id||'—'}; no automatically assumed equipment failure was created.`;
+    if(t.type==='lab'){state.sampleCount++;text=`Routine process verification completed. Filtered turbidity ${state.filtered.toFixed(3)} NTU; finished disinfectant ${state.finishCl.toFixed(2)} mg/L; pH ${state.finishPH.toFixed(2)}.`;}
+    if(t.type==='distribution') text=`Distribution review completed. Lowest tank ${lowTank.id} ${lowTank.level.toFixed(0)}%; lowest pressure Z${lowZone.id} ${lowZone.pressure.toFixed(0)} psi; demand ${state.cityDemand.toFixed(1)} MGD.`;
+    if(t.type==='chemical') text=`Chemical-feed/inventory review completed. Ferric ${(+controls.coag.value).toFixed(1)} mg/L, chlorine ${(+controls.chlorine.value).toFixed(1)} mg/L, ammonia ${(+controls.ammonia.value).toFixed(2)} mg/L.`;
+    if(t.type==='housekeeping') text='Housekeeping/safety walk completed and minor routine conditions addressed.';
+    if(t.type==='filters') text=`Filter review completed. ${worst?`F${worst.id} is the highest-attention running unit (${worst.run.toFixed(0)} hr, ${worst.head.toFixed(1)} ft, ${worst.turb.toFixed(3)} NTU).`:'No filter available.'}`;
+    if(t.type==='maintenance') text=`Maintenance/work-order review completed. ${activeAlarms.size?'Active alarms and unresolved equipment conditions were included in coordination.':'No major active alarm required immediate maintenance coordination.'}`;
+    if(t.type==='pfas') text=`PFAS GAC future-state check completed. Headloss ${state.pfas.headloss.toFixed(1)} ft; media service ${Math.round(state.pfas.mediaRemaining*100)}%; sample age ${state.pfas.sampleAgeDays} day(s).`;
+    return text;
+  }
+
+  function maybeRoutineFinding(t){
+    if(!['round','housekeeping','chemical','maintenance'].includes(t.type) || Math.random()>.20)return null;
+    const findings=[
+      'Minor pump/valve packing drip noted for maintenance follow-up.',
+      'Unusual but non-critical equipment vibration/noise noted for follow-up.',
+      'Small housekeeping issue corrected before it became a trip/access problem.',
+      'Local indication did not exactly match the remote display; verification noted for follow-up.',
+      'Chemical area inventory/housekeeping discrepancy documented for follow-up.'
+    ];
+    return findings[Math.floor(Math.random()*findings.length)];
+  }
+
+  function completeRoutineTask(id){
+    const t=ROUTINE_TASKS.find(x=>x.id===id);
+    if(!t||t.completed||state.ended)return;
+    if(state.minute<t.due-45){
+      showModal('Task Not Yet Due',`<p><b>${t.title}</b> is scheduled around ${shiftClock(t.due)}.</p><p>You can begin routine work when it enters its 45-minute task window.</p>`);
+      return;
+    }
+    if(highPriorityAlarmWaiting()&&t.priority==='LOW'){
+      state.response=Math.max(0,state.response-2);
+      log(`Priority error: low-priority routine task '${t.title}' performed while an unacknowledged high alarm was active.`);
+    }
+
+    const before=state.minute;
+    for(let i=0;i<t.duration&&!state.ended;i++)simulateMinute();
+    t.completed=true;t.completedAt=state.minute;
+    clearAlarm('task_'+t.id,true);
+    const lateness=Math.max(0,before-t.due);
+    if(lateness<=20)state.routineScore=Math.min(100,state.routineScore+1);
+    t.finding=maybeRoutineFinding(t);
+    const outcome=routineTaskOutcome(t);
+    log(`Routine task completed: ${t.title}.`);
+    if(t.finding)log(`Operator round finding: ${t.finding}`);
+
+    showModal(t.title,`<p>${outcome}</p>${t.finding?`<p><b>Operator finding:</b> ${t.finding}</p>`:''}<p><b>Operator time used:</b> ${t.duration} simulated minutes.</p>`);
+    renderRoutineTasks();render();
+  }
+
+  function updateRoutineWork(){
+    ROUTINE_TASKS.forEach(t=>{
+      if(t.completed)return;
+      const late=state.minute-t.due;
+      if(late>0){
+        const hits=Math.floor(late/30)+1;
+        if(hits>t.overdueHits){
+          const newHits=hits-t.overdueHits;
+          const weight=t.priority==='HIGH'?2.4:t.priority==='NORMAL'?1.4:.8;
+          state.routineScore=Math.max(0,state.routineScore-newHits*weight);
+          t.overdueHits=hits;
+          if(hits===1){
+            log(`Routine task overdue: ${t.title}.`);
+            alarm('task_'+t.id,t.priority==='HIGH'?'med':'lo','Routine task overdue',`${t.title} was due around ${shiftClock(t.due)}. Complete it when higher-priority process/alarm work permits.`);
+          }
+        }
+      }
+    });
+  }
+
+  function renderRoutineTasks(){
+    if(!$('routineTasks'))return;
+    const box=$('routineTasks');box.innerHTML='';
+    let completed=0,due=0,overdue=0;
+    ROUTINE_TASKS.forEach(t=>{
+      if(t.completed)completed++;
+      const late=state.minute-t.due;
+      const available=state.minute>=t.due-45;
+      if(!t.completed&&available)due++;
+      if(!t.completed&&late>0)overdue++;
+      const cls=t.completed?'done':late>0?'overdue':available?'due':'future';
+      const d=document.createElement('div');d.className='routine-task '+cls;
+      const status=t.completed?`DONE ${shiftClock(t.completedAt)}`:late>0?`${late} MIN OVERDUE`:available?'DUE WINDOW':'UPCOMING';
+      d.innerHTML=`<div class="task-time"><small>SCHEDULE</small><b>${shiftClock(t.due)}</b></div>
+        <div class="task-main"><b>${t.title}</b><span>${t.desc}</span><em>${t.priority} PRIORITY · ${t.duration} MIN</em></div>
+        <div class="task-action"><button class="btn ${late>0?'danger':''}" data-task="${t.id}" ${t.completed||!available?'disabled':''}>${t.completed?'Completed':'Perform task'}</button><small>${status}</small></div>`;
+      box.appendChild(d);
+    });
+    box.querySelectorAll('[data-task]').forEach(b=>b.onclick=()=>completeRoutineTask(b.dataset.task));
+    $('routineScore').textContent=Math.round(state.routineScore);
+    $('tasksCompleted').textContent=completed+'/'+ROUTINE_TASKS.length;
+    $('tasksDue').textContent=due;
+    $('tasksOverdue').textContent=overdue;
+    const next=ROUTINE_TASKS.filter(t=>!t.completed).sort((a,b)=>a.due-b.due)[0];
+    $('nextTask').textContent=next?`${shiftClock(next.due)} · ${next.title}`:'ALL COMPLETE';
+    $('navTaskCount').textContent=overdue?`${overdue}!`:due;
+    $('qlTasks').textContent=overdue?`${overdue} OVERDUE`:due;
+  }
+
+  function clockStr(){
+    const total=360+state.minute, h=Math.floor(total/60)%24, m=total%60;
+    return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+  }
+  function log(msg){
+    const d=document.createElement('div'); d.className='logline';
+    d.innerHTML='<b>'+clockStr()+'</b> — '+msg;
+    $('log').prepend(d);
+    while($('log').children.length>40) $('log').lastChild.remove();
+  }
+  function alarm(key, sev, title, detail, incident=false){
+    if(activeAlarms.has(key)) return;
+    activeAlarms.set(key,{sev,title,detail,time:state.minute,acked:false,incident});
+    state.unresolved++;
+    renderAlarms();
+    log('ALARM: '+title);
+  }
+  function clearAlarm(key, auto=false){
+    if(!activeAlarms.has(key)) return;
+    const a=activeAlarms.get(key); activeAlarms.delete(key); state.unresolved=Math.max(0,state.unresolved-1);
+    if(auto){ state.response=Math.min(100,state.response+2); log('Condition cleared: '+a.title); }
+    renderAlarms();
+  }
+  function renderAlarms(){
+    const box=$('alarms'); box.innerHTML='';
+    if(!activeAlarms.size){box.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">No active alarms.</div>';return}
+    [...activeAlarms.entries()].forEach(([key,a])=>{
+      const d=document.createElement('div');d.className='alarm';
+      const ackLabel=a.acked?'ACKED':'ACK';
+      const respond=a.incident?`<button class="btn good" data-respond="${key}">RESPOND</button>`:'';
+      d.innerHTML=`<span class="sev ${a.sev}"></span><div><b>${a.title}</b><small>${a.detail}</small></div><div class="alarm-actions"><button class="btn" data-ack="${key}" ${a.acked?'disabled':''}>${ackLabel}</button>${respond}</div>`;
+      box.appendChild(d);
+    });
+    box.querySelectorAll('[data-ack]').forEach(b=>b.onclick=()=>{
+      const k=b.dataset.ack;
+      if(activeAlarms.has(k)){
+        const a=activeAlarms.get(k);
+        a.acked=true;
+        state.response=Math.min(100,state.response+.5);
+        log('Acknowledged: '+a.title);
+        renderAlarms();
+      }
+    });
+    box.querySelectorAll('[data-respond]').forEach(b=>b.onclick=()=>respondToIncident(b.dataset.respond));
+  }
+  const BW_STEPS=[
+    {name:'Verify permissives',dur:1,water:false},
+    {name:'Remove from service',dur:2,water:false},
+    {name:'Lower water level',dur:3,water:false},
+    {name:'Media agitation',dur:4,water:false},
+    {name:'Low-rate wash',dur:3,water:true},
+    {name:'High-rate wash',dur:5,water:true},
+    {name:'Settle / rinse',dur:3,water:true},
+    {name:'Return to service',dur:2,water:false}
+  ];
+
+  function bwActuatorStates(){
+    const s=state.bwSeq;
+    const step=s.active?s.step:-1;
+    const states=[
+      {name:'Influent valve',cmd:(step>=1&&step<7)?'CLOSED':'OPEN'},
+      {name:'Effluent valve',cmd:(step>=1&&step<7)?'CLOSED':'OPEN'},
+      {name:'Waste / drain valve',cmd:(step>=2&&step<=6)?'OPEN':'CLOSED'},
+      {name:'Agitation / air valve',cmd:step===3?'OPEN':'CLOSED'},
+      {name:'Backwash-water valve',cmd:(step>=4&&step<=6)?'OPEN':'CLOSED'}
+    ];
+    return states.map((a,idx)=>{
+      let fb=a.cmd, status='ok';
+      if(s.fault && s.fault.actuator===idx){
+        fb=s.fault.feedback;status='fault';
+      }else if(s.active && s.stepElapsed===0 && [1,2,3,4,5,6,7].includes(step)){
+        status='moving';
+      }
+      return {...a,feedback:fb,status};
+    });
+  }
+
+  function bwPermissiveStates(){
+    const active=state.filters.find(f=>f.status==='BW');
+    return [
+      {name:'No other filter in BW',ok:!active||active.id===state.bwSeq.filterId},
+      {nam
