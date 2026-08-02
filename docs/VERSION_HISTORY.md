@@ -1,5 +1,8 @@
 # Version History
 
+## V13 — pH, Alkalinity & Caustic Control
+Added dynamic raw-water pH and alkalinity, post-coagulation alkalinity tracking, and operator-adjustable caustic-soda trim. Ferric coagulation now consumes alkalinity in the game model, while caustic increases finished alkalinity and pH through a buffered response. Lab checks now include raw pH, raw alkalinity, post-coag alkalinity, finished pH, finished alkalinity, and caustic dose. New incidents/alarms include source alkalinity/pH shifts, caustic-feed deviations, low/high finished pH, and low finished alkalinity.
+
 ## V12 — Randomized Shifts / Real-Time Pace
 Slowed the simulation clock so the speed range is now **30 simulated seconds to 1 simulated minute per real second**. The former 1–10 simulated-minutes-per-second range was removed to give the operator more time to navigate SCADA, recognize alarms, diagnose problems, and respond. V12 also preserves the randomized-shift system introduced in V11.
 
