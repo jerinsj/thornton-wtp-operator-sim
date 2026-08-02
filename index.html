@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Thornton WTP Operator Simulator V16.1</title>
+  <title>Thornton WTP Operator Simulator V16.2</title>
   <style>
     body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11161b;color:#eef2f5;font:14px "Segoe UI Variable Text",Inter,"Segoe UI",Roboto,Arial,sans-serif}
     .loader{max-width:620px;padding:28px;text-align:center}.loader b{display:block;font-size:18px;margin-bottom:8px}.loader span{color:#a4b0b9;line-height:1.5}.err{color:#ff9b9b;margin-top:14px}
@@ -13,9 +13,10 @@
   <script src="app/patch-v14.js?v=14"></script>
   <script src="app/patch-v16.js?v=16"></script>
   <script src="app/patch-v16-controls.js?v=16.1.2"></script>
+  <script src="app/patch-v16-tasks.js?v=16.2"></script>
 </head>
 <body>
-  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.1…</b><span>Interactive SCADA-style training simulation with working Start New Shift, Resume Shift, and Scenario controls. Not an actual control system.</span><div class="err" id="err"></div></div>
+  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.2…</b><span>Interactive SCADA-style training simulation with repaired routine task board and working Home controls. Not an actual control system.</span><div class="err" id="err"></div></div>
   <script>
     (async()=>{
       const parts=Array.from({length:10},(_,i)=>`app/parts/part-${String(i).padStart(2,'0')}.txt`);
@@ -29,11 +30,13 @@
         if(typeof patchSimulatorSourceV14!=='function') throw new Error('V14 theme patch module did not load.');
         if(typeof patchSimulatorSourceV16!=='function') throw new Error('V16 interactive HMI patch module did not load.');
         if(typeof patchSimulatorSourceV16Controls!=='function') throw new Error('V16.1 controls patch module did not load.');
+        if(typeof patchSimulatorSourceV16Tasks!=='function') throw new Error('V16.2 task-board patch module did not load.');
         source=patchSimulatorSource(source);
         source=patchSimulatorSourceV13(source);
         source=patchSimulatorSourceV14(source);
         source=patchSimulatorSourceV16(source);
         source=patchSimulatorSourceV16Controls(source);
+        source=patchSimulatorSourceV16Tasks(source);
         document.open();
         document.write(source);
         document.close();
