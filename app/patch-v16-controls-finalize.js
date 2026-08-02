@@ -1,3 +1,3 @@
 function patchSimulatorSourceV16Finalize(source){
-  return source.split('<\\/script>').join('</'+'script>');
+  return source.replace('<\\/script></body>','</'+'script></body>');
 }
