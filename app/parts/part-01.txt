@@ -1,0 +1,89 @@
+lex;align-items:center;gap:7px;flex-wrap:wrap;padding:14px}.mini-train div{border:1px solid #31536c;background:#0a1a29;padding:10px 11px;border-radius:7px;font-size:10px;font-weight:800}.mini-train b{color:#6593ad}
+  .chem-status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:14px}.chemstat{background:#091927;border:1px solid #294963;border-radius:10px;padding:11px}.chemstat small,.chemstat span{display:block;color:var(--muted);font-size:9px}.chemstat b{display:block;font-size:19px;margin:3px 0}
+  .dist-action-grid{grid-template-columns:repeat(2,minmax(160px,240px));justify-content:start}
+  .alarm-banner{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-color:#5c3b43}.alarm-banner small{display:block;color:#9e737b;font-size:8px}.alarm-banner b{font-size:11px}.alarm-banner>span{font-size:10px;padding:5px 8px;border-radius:7px;background:#112536;color:#b7d4e5}
+  .scada-page[data-page-id="alarms"] .alarms{max-height:none}
+  .scada-page[data-page-id="log"] .log{max-height:620px}
+  .scada-page[data-page-id="pumps"] .distpanel{border:0;background:transparent;padding:14px}.scada-page[data-page-id="pumps"] .stationgrid{grid-template-columns:repeat(3,1fr)}
+  .scada-page[data-page-id="tanks"] .tankpanel{margin:0;border:0;background:transparent;padding:14px}.scada-page[data-page-id="tanks"] .tankgrid{grid-template-columns:repeat(3,1fr)}
+  .scada-page[data-page-id="distribution"] .dist-grid{grid-template-columns:1fr}.scada-page[data-page-id="distribution"] .zonegrid{grid-template-columns:repeat(5,1fr)}
+  @media(max-width:1050px){.scada-shell{grid-template-columns:170px minmax(0,1fr)}.quicklook{grid-template-columns:repeat(3,1fr)}.chem-status-grid{grid-template-columns:repeat(2,1fr)}.scada-page[data-page-id="pumps"] .stationgrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:720px){.bw-strip{grid-template-columns:repeat(2,1fr)}.scada-shell{display:block}.scada-nav{position:sticky;top:58px;height:auto;display:flex;flex-direction:row;overflow-x:auto;padding:6px;border-right:0;border-bottom:1px solid var(--line)}.nav-head,.nav-status,.nav-spacer{display:none}.nav-btn{min-width:max-content;border-left:0;border-bottom:2px solid transparent;padding:8px}.nav-btn.active{border-left:0;border-bottom-color:#71e1ff}.scada-workspace{padding:8px}.page-header{align-items:flex-start}.page-mode{display:none}.quicklook{grid-template-columns:repeat(2,1fr)}.chem-status-grid{grid-template-columns:1fr 1fr}.scada-page[data-page-id="pumps"] .stationgrid{grid-template-columns:1fr}.scada-page[data-page-id="tanks"] .tankgrid{grid-template-columns:repeat(2,1fr)}.scada-page[data-page-id="distribution"] .zonegrid{grid-template-columns:repeat(2,1fr)}}
+
+  /* V5 chemical feed detail */
+  .chemical-feed-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:14px}
+  .feedcard{background:#091927;border:1px solid #294963;border-radius:11px;padding:11px}
+  .feedhead{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #203b50;padding-bottom:8px;margin-bottom:5px}
+  .feedhead b{font-size:11px;letter-spacing:.5px}.feedhead span{font-size:8px;color:#8fb0c5;background:#102a40;border:1px solid #274863;border-radius:99px;padding:3px 6px}
+  .feedrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:6px 1px;border-bottom:1px solid rgba(36,65,92,.48)}
+  .feedrow:last-child{border-bottom:0}.feedrow small{color:var(--muted);font-size:9px}.feedrow b{font-size:12px;text-align:right}
+  .chemical-basis-note{margin:0 14px 14px;padding:10px 11px;border:1px solid #35506a;border-radius:9px;background:#081724;color:#92afc1;font-size:10px;line-height:1.45}
+  .chemical-basis-note b{color:#d7edf8}
+  @media(max-width:850px){.chemical-feed-grid{grid-template-columns:1fr}}
+
+  .filter-guidance{margin:10px 14px 0;padding:9px 10px;border:1px solid #35506a;border-radius:9px;background:#081724;color:#92afc1;font-size:10px;line-height:1.45}
+  .filter-guidance b{color:#d7edf8}
+
+
+  .alarm-actions{display:flex;gap:5px;align-items:center}.alarm-actions .btn{padding:5px 7px;font-size:9px}
+  .incident-options{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}.incident-choice{width:100%;text-align:left;padding:10px 11px}
+  .incident-context{padding:10px;border:1px solid #294963;background:#091927;border-radius:10px;color:#b7cddd;font-size:12px;line-height:1.45}
+  .incident-result{margin-top:10px;padding:9px 10px;border-radius:9px;background:#0a1a29;border:1px solid #294963;font-size:11px;color:#a9c3d3}
+
+  /* V8 PFAS GAC */
+  .process{grid-template-columns:repeat(8,minmax(112px,1fr))}
+  .pfas-project-banner{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 15px;border-color:#4b6e58;background:linear-gradient(180deg,#102a25,#0c211e)}
+  .pfas-project-banner small{display:block;color:#83bea2;font-size:8px;letter-spacing:1px}.pfas-project-banner b{display:block;font-size:13px;margin-top:3px}.pfas-project-banner p{margin:4px 0 0;color:#9ebbb0;font-size:10px;max-width:800px;line-height:1.4}.pfas-project-banner>span{font-size:9px;color:#c9efdb;border:1px solid #47755d;background:#123529;padding:6px 8px;border-radius:8px;white-space:nowrap}
+  .pfas-flow{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:14px}.pfas-flow>div{min-width:190px;background:#091927;border:1px solid #31516a;border-radius:10px;padding:11px;text-align:center}.pfas-flow small{display:block;color:var(--muted);font-size:9px}.pfas-flow b{display:block;margin-top:3px;font-size:14px}.pfas-flow i{font-style:normal;color:#71e1ff;font-size:18px}
+  .pfas-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:0 14px 14px}.pfas-stat{background:#091927;border:1px solid #294963;border-radius:10px;padding:10px}.pfas-stat small,.pfas-stat span{display:block;color:var(--muted);font-size:9px}.pfas-stat b{display:block;font-size:18px;margin:3px 0}
+  .pfas-lab-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:14px}.pfas-lab{background:#091927;border:1px solid #294963;border-radius:10px;padding:11px}.pfas-lab small,.pfas-lab span{display:block;color:var(--muted);font-size:9px}.pfas-lab b{display:block;font-size:19px;margin:3px 0}
+  .pfas-actions{grid-template-columns:repeat(3,minmax(160px,240px));justify-content:start}
+  .pfas-concept-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:14px}.pfas-concept-grid>div{background:#091927;border:1px solid #294963;border-radius:9px;padding:10px}.pfas-concept-grid b{display:block;font-size:10px;color:#d9f2ff}.pfas-concept-grid span{display:block;color:#8fa9bc;font-size:10px;line-height:1.4;margin-top:3px}
+  @media(max-width:900px){.pfas-summary{grid-template-columns:repeat(2,1fr)}.pfas-lab-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:720px){.pfas-project-banner{align-items:flex-start;flex-direction:column}.pfas-summary,.pfas-lab-grid,.pfas-concept-grid{grid-template-columns:1fr}.pfas-actions{grid-template-columns:1fr}}
+
+  /* V9 Backwash sequence */
+  .bw-sequence-card{margin:10px 14px 4px;background:#081724;border:1px solid #35506a;border-radius:12px;overflow:hidden}
+  .bw-seq-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 12px;border-bottom:1px solid #294963;background:#0b1d2c}
+  .bw-seq-head small{display:block;color:#6f91a6;font-size:8px;letter-spacing:.8px}.bw-seq-head b{display:block;font-size:13px;margin-top:2px}.bw-seq-head span{font-size:9px;border:1px solid #35617e;background:#102a40;border-radius:99px;padding:4px 8px;color:#bde8ff}
+  .bw-progress{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding:10px 11px}.bw-step{min-height:54px;border:1px solid #294963;background:#091927;border-radius:7px;padding:7px;text-align:center}.bw-step small{display:block;color:#6f8da0;font-size:7px}.bw-step b{display:block;font-size:9px;margin-top:3px;line-height:1.2}.bw-step.done{border-color:#376b55;background:#0d2b23}.bw-step.active{border-color:#71e1ff;background:#103247;box-shadow:0 0 0 1px rgba(113,225,255,.15)}.bw-step.fault{border-color:#a44350;background:#3a1b22}
+  .bw-seq-status{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:0 11px 10px}.bw-seq-status>div{background:#091927;border:1px solid #294963;border-radius:8px;padding:8px}.bw-seq-status small{display:block;color:#708da1;font-size:8px}.bw-seq-status b{display:block;font-size:12px;margin-top:2px}
+  .bw-permissives,.bw-actuator-panel{padding:0 11px 10px}.bw-permissives h3,.bw-actuator-panel h3{font-size:9px;color:#9bb8c9;margin:4px 0 7px;letter-spacing:.6px}
+  #bwPermissives{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.perm{display:flex;align-items:center;gap:6px;background:#091927;border:1px solid #294963;border-radius:7px;padding:7px;font-size:9px}.perm i{width:8px;height:8px;border-radius:50%;background:#4cd89b}.perm.bad i{background:#ff6e6e}.perm.warn i{background:#ffcf5a}
+  .actuator-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.actuator{background:#091927;border:1px solid #294963;border-radius:8px;padding:8px}.actuator small{display:block;color:#708da1;font-size:8px}.actuator b{display:block;font-size:10px;margin:3px 0}.actuator span{font-size:8px;color:#8fa9bc}.actuator.ok{border-color:#315b49}.actuator.moving{border-color:#8a6b2b}.actuator.fault{border-color:#a44350;background:#2f1820}
+  .bw-fault-panel{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 11px 10px;padding:9px 10px;background:#091927;border:1px solid #294963;border-radius:8px}.bw-fault-panel small{display:block;color:#708da1;font-size:8px}.bw-fault-panel b{font-size:10px}.bw-fault-panel.fault{border-color:#a44350;background:#321820}
+  @media(max-width:1050px){.bw-progress{grid-template-columns:repeat(4,1fr)}.actuator-grid{grid-template-columns:repeat(3,1fr)}#bwPermissives{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:720px){.bw-progress{grid-template-columns:repeat(2,1fr)}.bw-seq-status{grid-template-columns:repeat(2,1fr)}.actuator-grid{grid-template-columns:repeat(2,1fr)}}
+
+  /* V10 Routine shift tasks */
+  .nav-task-btn i{font-style:normal;margin-left:auto;background:#183549;color:#c6eaff;border:1px solid #35617e;border-radius:99px;padding:2px 6px;font-size:9px}
+  .task-shift-banner{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px 15px;background:linear-gradient(180deg,#102335,#0b1c2b)}
+  .task-shift-banner small{display:block;color:#789bb1;font-size:8px;letter-spacing:.8px}.task-shift-banner b{display:block;font-size:13px;margin-top:3px}.task-shift-banner p{margin:4px 0 0;color:#91adbf;font-size:10px;max-width:840px;line-height:1.45}
+  .task-score-box{min-width:130px;text-align:center;background:#091927;border:1px solid #31516a;border-radius:10px;padding:9px}.task-score-box b{font-size:25px}
+  .task-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px}.task-summary>div{background:#091927;border:1px solid #294963;border-radius:9px;padding:9px}.task-summary small{display:block;color:var(--muted);font-size:9px}.task-summary b{display:block;font-size:15px;margin-top:3px}
+  .routine-task-list{padding:0 14px 14px;display:grid;gap:7px}.routine-task{display:grid;grid-template-columns:72px 1fr 140px;gap:10px;align-items:center;background:#091927;border:1px solid #294963;border-radius:10px;padding:10px}.routine-task.done{border-color:#315b49;background:#0d241f}.routine-task.overdue{border-color:#9c414d;background:#2b171d}.routine-task.due{border-color:#8a6b2b}.routine-task.future{opacity:.75}
+  .task-time{text-align:center}.task-time small{display:block;color:#6f8da0;font-size:8px}.task-time b{font-size:13px}.task-main b{display:block;font-size:11px}.task-main span{display:block;color:#8fa9bc;font-size:9px;line-height:1.35;margin-top:2px}.task-main em{display:inline-block;margin-top:5px;font-style:normal;font-size:8px;color:#a9c6d7;border:1px solid #294963;border-radius:99px;padding:2px 6px}.task-action{text-align:right}.task-action .btn{width:100%;padding:7px 8px;font-size:10px}.task-action small{display:block;color:#708da1;font-size:8px;margin-top:4px}
+  .routine-guidance-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:14px}.routine-guidance-grid>div{background:#091927;border:1px solid #294963;border-radius:9px;padding:10px}.routine-guidance-grid b{display:block;font-size:10px;color:#d8effa}.routine-guidance-grid span{display:block;color:#8fa9bc;font-size:10px;line-height:1.4;margin-top:3px}
+  @media(max-width:800px){.routine-task{grid-template-columns:65px 1fr}.task-action{grid-column:1/-1}.routine-guidance-grid{grid-template-columns:1fr}.task-summary{grid-template-columns:repeat(2,1fr)}.task-shift-banner{align-items:flex-start;flex-direction:column}.task-score-box{width:100%}}
+</style>
+</head>
+<body>
+<div class="topbar">
+<div class="brand">THORNTON WTP // OPERATOR SIM V10<small>training-fiction prototype · not an actual control system</small></div>
+<div class="topstats">
+<div class="pill">SHIFT <b id="clock">06:00</b></div>
+<div class="pill">FLOW <b id="flowTop">14.0 MGD</b></div>
+<div class="pill">QUALITY <b id="qualityTop">100</b></div>
+<div class="pill">DIST <b id="distTop">100</b></div>
+<div class="pill">SCORE <b id="scoreTop">0</b></div>
+</div>
+</div>
+<main class="scada-shell"><nav class="scada-nav">
+<div class="nav-head">
+<b>SCADA PAGES</b>
+<small>operator simulation</small>
+</div>
+<button class="nav-btn active" data-page="overview"><span>01</span> System Overview</button><button class="nav-btn nav-task-btn" data-page="tasks"><span>02</span> Shift Tasks <i id="navTaskCount">0</i></button>
+<button class="nav-btn" data-page="treatment"><span>03</span> Treatment</button>
+<button class="nav-btn" data-page="filters"><span>04</span> Filters</button><button class="nav-btn" data-page="pfas"><span>05</span> PFAS GAC</button>
+<button class="nav-btn" data-page="chemicals"><span>06</span> Oz
