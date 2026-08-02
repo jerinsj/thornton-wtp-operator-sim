@@ -29,16 +29,28 @@ The simulator models a 12-hour operator shift with treatment-process control, fi
 
 ## Run locally
 
-No build step is required.
+No build step is required. Because the GitHub deployment bundle is loaded from static fragment files, serve the repository through a small local HTTP server rather than double-clicking `index.html`.
 
-1. Download or clone this repository.
-2. Open `index.html` in a modern browser.
+For example:
 
-For the most consistent browser behavior, you can also serve the folder with any basic static web server.
+```bash
+python -m http.server 8000
+```
+
+Then open `http://localhost:8000` in a browser.
 
 ## GitHub Pages
 
-This project is designed to work as a static GitHub Pages site from the repository root.
+The repository is ready to run from GitHub Pages.
+
+In GitHub:
+
+1. Open **Settings → Pages**.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select **main** and **/(root)**.
+4. Save.
+
+The root `index.html` loads the V10 static simulator bundle from `app/parts/` and launches the game in the browser.
 
 ## Important disclaimer
 
@@ -67,11 +79,18 @@ Do not use this simulator as an operating procedure, regulatory reference, or su
 ├── index.html
 ├── README.md
 ├── .nojekyll
+├── app/
+│   └── parts/
+│       ├── part-00.txt
+│       ├── ...
+│       └── part-09.txt
 └── docs/
     ├── REALISM_BOUNDARIES.md
     └── VERSION_HISTORY.md
 ```
 
+The files in `app/parts/` concatenate to the standalone V10 simulator source. This keeps the current single-file game intact while allowing it to be published through the connected GitHub workflow.
+
 ## Development direction
 
-Future versions can separate the current single-file application into modular CSS and JavaScript files, add trend-history screens, scheduled maintenance, shift scenarios, and additional educational explanations while preserving the project's infrastructure-safety boundaries.
+A future refactor can split the simulator into conventional CSS and JavaScript modules, add trend-history screens, scheduled maintenance, shift scenarios, and additional educational explanations while preserving the project's infrastructure-safety boundaries.
