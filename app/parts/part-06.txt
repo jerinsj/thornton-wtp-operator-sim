@@ -1,0 +1,197 @@
+taset.pump));
+
+    const tbox=$('tanks');tbox.innerHTML='';
+    state.tanks.forEach(t=>{
+      const d=document.createElement('div');
+      d.className='tank '+(t.level<30?'low':t.level>94?'high':'');
+      d.innerHTML=`<small>${t.id} · Z${state.zones[t.zone].id}</small><b>${t.level.toFixed(0)}%</b><span>${t.level<35?'LOW':t.level>90?'HIGH':'NORMAL'}</span><div class="tankbar"><i style="width:${t.level}%"></i></div>`;
+      tbox.appendChild(d);
+    });
+
+    $('prvHealth').textContent=state.prv.abnormal?`${state.prv.total-state.prv.abnormal} normal / ${state.prv.abnormal} abnormal`:`${state.prv.total} modeled / normal`;
+    $('prvBar').style.width=((state.prv.total-state.prv.abnormal)/state.prv.total*100)+'%';
+    const lowTank=[...state.tanks].sort((a,b)=>a.level-b.level)[0];
+    const lowZone=[...state.zones].sort((a,b)=>a.pressure-b.pressure)[0];
+    $('distFocus').textContent=state.event==='mainbreak'?'Possible main-break response in progress.'
+      :state.event==='prvfault'?'PRV/pressure-control abnormality requires field coordination.'
+      :state.event==='pumptrip'?'Remote pumping trip requires attention.'
+      :lowTank.level<40?`Watch ${lowTank.id} in Zone ${state.zones[lowTank.zone].id}; level is falling.`
+      :lowZone.pressure<55?`Watch Zone ${lowZone.id}; pressure margin is narrowing.`
+      :'Balance production, tank levels and zone pressures.';
+  }
+  function operatePump(id){
+    const p=state.pumps[id-1];
+    if(p.trip){
+      p.trip=false;p.mode='AUTO';state.response=Math.min(100,state.response+5);
+      clearAlarm('ps'+id,true);log(`${p.label} reset and returned to AUTO after operator review.`);
+      if(state.event==='pumptrip'&&state.eventPump===id){state.eventTimer=Math.min(state.eventTimer,8);}
+      return render();
+    }
+    if(p.mode==='FORCED'){
+      p.mode='AUTO';log(`${p.label} returned to AUTO.`);
+    } else if(!p.run){
+      p.mode='FORCED';p.run=true;state.efficiency=Math.max(0,state.efficiency-.4);
+      log(`${p.label} forced to RUN to support Zone ${state.zones[p.zone].id}.`);
+    }
+    render();
+  }
+  function triggerEvent(){
+    if(state.event) return;
+    const choices=[
+      {id:'storm',name:'Rapid raw-water turbidity change',dur:95,msg:'Raw-water conditions changed quickly. Clarification and filter loading may be affected.',
+       options:[
+        ['Review trends, run a jar test, and adjust treatment cautiously from verified results.','correct'],
+        ['Immediately double every chemical feed.','wrong'],
+        ['Ignore it until filtered-water turbidity rises.','wrong']]},
+      {id:'odor',name:'Taste-and-odor loading increase',dur:80,msg:'Source-water taste/odor loading has increased and ozone/biofilter demand may be changing.',
+       options:[
+        ['Verify source/process conditions and review ozone/biofilter performance before making measured changes.','correct'],
+        ['Backwash all six filters immediately.','wrong'],
+        ['Turn ozone off to protect the filters.','wrong']]},
+      {id:'ozfault',name:'Ozone system output derate',dur:70,msg:'Available ozone output is below expected capacity. Treatment performance needs review.',
+       options:[
+        ['Confirm the condition locally, review process response, and coordinate maintenance while maintaining safe treatment.','correct'],
+        ['Increase plant flow to compensate for the ozone loss.','wrong'],
+        ['Acknowledge the alarm and make no further checks.','wrong']]},
+      {id:'clfeed',name:'Disinfectant feed deviation',dur:65,msg:'Indicated chlorine feed and downstream process response no longer agree.',
+       options:[
+        ['Verify residual with an independent check and inspect the chemical-feed system before changing dose aggressively.','correct'],
+        ['Raise the chlorine setpoint to maximum immediately.','wrong'],
+        ['Disable the residual alarm.','wrong']]},
+      {id:'coagfeed',name:'Coagulant feed-pump deviation',dur:75,msg:'Calculated coagulant demand and simulated delivered feed have diverged.',
+       options:[
+        ['Inspect the feed system, verify actual feed/process response, and use jar/process data to guide any correction.','correct'],
+        ['Compensate by increasing chlorine.','wrong'],
+        ['Backwash a filter to fix coagulation.','wrong']]},
+      {id:'analyzer',name:'Online analyzer deviation / suspect reading',dur:70,msg:'One online process measurement has changed abruptly without matching surrounding process data.',
+       options:[
+        ['Treat the value as suspect, verify with a bench/grab check or alternate indication, then inspect/calibrate as needed.','correct'],
+        ['Immediately drive the process to match the single analyzer reading.','wrong'],
+        ['Silence the alarm and assume the sensor will recover.','wrong']]},
+      {id:'filterbreak',name:'Individual filter turbidity rise',dur:85,msg:'One filter shows a rising effluent-turbidity trend relative to the others.',
+       options:[
+        ['Compare the individual filter trend, headloss and run history; inspect it and remove/backwash only if justified.','correct'],
+        ['Wash all six filters.','wrong'],
+        ['Increase finished-water chlorine to hide the turbidity problem.','wrong']]},
+      {id:'sludge',name:'Clarifier / sludge-removal abnormality',dur:90,msg:'Settling performance and sludge-handling indications suggest solids are accumulating abnormally.',
+       options:[
+        ['Inspect clarification/sludge-removal equipment and trend settled-water quality while protecting downstream filters.','correct'],
+        ['Increase plant flow to move the solids through faster.','wrong'],
+        ['Ignore the condition because filters will catch everything.','wrong']]},
+      {id:'sourcepump',name:'Raw-water supply limitation',dur:85,msg:'Available raw-water supply capacity has dropped and current plant production may not be sustainable.',
+       options:[
+        ['Verify source availability, reduce production if necessary, and coordinate the supply/equipment response.','correct'],
+        ['Keep the same flow regardless of source limitation.','wrong'],
+        ['Increase backwash frequency.','wrong']]},
+      {id:'scadacomm',name:'Remote SCADA / RTU communications loss',dur:90,msg:'A remote distribution indication is stale or unavailable.',
+       options:[
+        ['Treat remote data as unverified, use available independent indications, and coordinate field/controls verification.','correct'],
+        ['Assume the last value is still correct and operate normally.','wrong'],
+        ['Repeatedly force remote outputs until communications return.','wrong']]},
+      {id:'inventory',name:'Chemical inventory low advisory',dur:120,msg:'A treatment chemical inventory has fallen into the game reorder range.',
+       options:[
+        ['Verify inventory/usage and arrange replenishment before it becomes an operating limitation.','correct'],
+        ['Wait until the tank is empty before taking action.','wrong'],
+        ['Reduce analyzer sampling to conserve chemical.','wrong']]},
+      {id:'pfashl',name:'PFAS GAC hydraulic headloss increase',dur:90,msg:'The future-state PFAS GAC facility is developing higher hydraulic resistance than expected.',
+       options:[
+        ['Verify flow/headloss indications, inspect the GAC facility, and coordinate approved maintenance/backwash response if needed.','correct'],
+        ['Increase plant flow to push through the GAC faster.','wrong'],
+        ['Increase chlorine dose to lower the GAC headloss.','wrong']]},
+      {id:'pfasbreak',name:'PFAS laboratory breakthrough trend',dur:120,msg:'A laboratory PFAS trend suggests the GAC adsorption barrier may be approaching a media-management point.',
+       options:[
+        ['Confirm the laboratory result/trend, review media service and source loading, and coordinate planned GAC media management.','correct'],
+        ['Increase coagulant dose because PFAS is measured in ppt.','wrong'],
+        ['Ignore it because there is no online PFAS analyzer alarm.','wrong']]},
+      {id:'pfasload',name:'PFAS source-loading increase',dur:110,msg:'Source-water conditions have increased the modeled PFAS load entering the future GAC system.',
+       options:[
+        ['Review source/blend information, PFAS sampling history and GAC service condition while maintaining the treatment barrier.','correct'],
+        ['Bypass the PFAS treatment to reduce headloss.','wrong'],
+        ['Backwash all existing biofilters to remove dissolved PFAS.','wrong']]},
+      {id:'demand',name:'Distribution demand surge',dur:70,msg:'System demand rose sharply. Storage and pressure may require a production response.',
+       options:[
+        ['Review demand, tank levels and pressure-zone balance, then adjust production/pumping deliberately.','correct'],
+        ['Maximize TWTP flow without checking treatment or storage.','wrong'],
+        ['Backwash a filter to create more distribution pressure.','wrong']]},
+      {id:'fireflow',name:'Large fire-flow demand',dur:55,msg:'One pressure-zone family is seeing a large temporary demand.',
+       options:[
+        ['Confirm the demand condition and protect pressure/storage while coordinating the distribution response.','correct'],
+        ['Lower all distribution pumps to save energy.','wrong'],
+        ['Treat it as a water-main break without verification.','wrong']]},
+      {id:'mainbreak',name:'Possible distribution main break',dur:100,msg:'A pressure zone is losing pressure while demand has increased.',
+       options:[
+        ['Review SCADA trends and dispatch/coordinate a field response while protecting system pressure and storage.','correct'],
+        ['Increase chemical dose at the treatment plant.','wrong'],
+        ['Wait for customer complaints before investigating.','wrong']]},
+      {id:'pumptrip',name:'Distribution pump trip',dur:100,msg:'A distribution pump station is unavailable and the affected zone needs review.',
+       options:[
+        ['Check zone pressure/tank response and reset or coordinate equipment response only after reviewing the condition.','correct'],
+        ['Force every distribution pump on.','wrong'],
+        ['Ignore the trip if another station is running.','wrong']]},
+      {id:'prvfault',name:'Pressure-control / PRV abnormality',dur:90,msg:'A pressure-zone family has an abnormal pressure-control pattern.',
+       options:[
+        ['Verify the pressure pattern and coordinate field inspection rather than chasing it with unrelated plant changes.','correct'],
+        ['Increase coagulant dose.','wrong'],
+        ['Lower finished-water chlorine.','wrong']]},
+      {id:'power',name:'Utility power interruption / recovery',dur:45,msg:'A brief power interruption has caused equipment and remote-site recovery indications.',
+       options:[
+        ['Verify critical treatment, chemical-feed, pumping and remote-system status after the transition.','correct'],
+        ['Assume all equipment automatically restarted correctly.','wrong'],
+        ['Immediately start a filter backwash.','wrong']]}
+    ];
+    const e=choices[Math.floor(Math.random()*choices.length)];
+    state.event=e.id;state.eventMeta=e;state.eventTimer=e.dur;state.eventPump=null;state.eventZone=null;state.eventFilter=null;state.eventResponded=false;
+
+    if(e.id==='pumptrip'){
+      const p=state.pumps[Math.floor(Math.random()*state.pumps.length)];
+      p.trip=true;p.run=false;state.eventPump=p.id;state.eventZone=p.zone;
+      alarm('ps'+p.id,'hi',`${p.label} trip`,`Simulated station supporting Zone ${state.zones[p.zone].id} is unavailable until reset.`);
+    }
+    if(e.id==='mainbreak'||e.id==='fireflow'||e.id==='prvfault') state.eventZone=Math.floor(Math.random()*state.zones.length);
+    if(e.id==='prvfault'){
+      state.prv.abnormal=1;
+      alarm('prv','med','PRV / pressure-control abnormality',`Pressure regulation in simulated Zone ${state.zones[state.eventZone].id} needs field verification.`);
+    }
+    if(e.id==='filterbreak'){
+      const candidates=state.filters.filter(f=>f.status==='RUN');
+      const f=[...candidates].sort((a,b)=>b.run-a.run)[0];
+      if(f) state.eventFilter=f.id;
+    }
+    alarm('event','hi',e.name,e.msg,true);
+  }
+
+  function respondToIncident(key){
+    if(key!=='event'||!state.eventMeta) return;
+    const e=state.eventMeta;
+    const ack=activeAlarms.get('event');
+    const ackNote=ack&&ack.acked?'Alarm has been acknowledged.':'Alarm is not yet acknowledged; you can still diagnose and respond.';
+    const modal=$('modal');
+    const box=$('modalBox');
+    box.innerHTML=`<h2>${e.name}</h2><div class="incident-context">${e.msg}<br><br><b>${ackNote}</b></div><div class="incident-options"></div><div class="row"><button class="btn" id="incidentCancel">Close</button></div>`;
+    const opts=box.querySelector('.incident-options');
+    e.options.forEach((op,i)=>{
+      const b=document.createElement('button');
+      b.className='btn incident-choice';
+      b.textContent=op[0];
+      b.onclick=()=>handleIncidentChoice(i);
+      opts.appendChild(b);
+    });
+    box.querySelector('#incidentCancel').onclick=()=>modal.classList.remove('show');
+    modal.classList.add('show');
+  }
+
+  function handleIncidentChoice(index){
+    if(!state.eventMeta) return;
+    const choice=state.eventMeta.options[index];
+    if(choice[1]==='correct'){
+      state.eventResponded=true;
+      state.response=Math.min(100,state.response+7);
+      log(`Incident response selected for ${state.eventMeta.name}: ${choice[0]}`);
+      if(state.event==='storm') state.jarBonus=Math.max(state.jarBonus,.65);
+      if(state.event==='sourcepump') controls.flow.value=Math.min(+controls.flow.value,12);
+      if(state.event==='mainbreak'||state.event==='prvfault') state.eventTimer=Math.min(state.eventTimer,25);
+      if(state.event==='pumptrip'&&state.eventPump){
+        const p=state.pumps[state.eventPump-1];
+        if(p.trip){p.trip=false;p.mode='AUTO';clearAlarm('ps'+p.id,true);}
+      }
+      if(state.event==='prvfault'){state.prv.abnormal=0;
