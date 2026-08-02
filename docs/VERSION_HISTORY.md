@@ -1,5 +1,8 @@
 # Version History
 
+## V11 — Randomized Shifts
+Added randomized shift handoffs and shift-specific incident pools. Each new shift now varies production, source blend, water-quality starting values, chemical setpoints, storage, zone conditions, backwash-basin level, filter age/headloss/turbidity, and PFAS GAC status. Most shifts inherit one or two minor imperfect conditions, while some begin relatively stable. Each shift receives roughly 8–11 possible incident types, and incident types are removed from that shift's remaining pool after they occur to reduce repetition. A shift can also begin with an active incident already present at turnover.
+
 ## V10 — Routine Shift Work
 Added scheduled plant rounds, process/lab checks, distribution reviews, chemical inventory, housekeeping, filter reviews, maintenance coordination, PFAS checks, and shift turnover.
 
