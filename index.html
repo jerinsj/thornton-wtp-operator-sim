@@ -18,11 +18,21 @@
   <script>
     (async()=>{
       const parts=Array.from({length:10},(_,i)=>`app/parts/part-${String(i).padStart(2,'0')}.txt`);
+      const heroFiles=[
+        'assets/home/hero-0.txt','assets/home/hero-1.txt','assets/home/hero-2.txt','assets/home/hero-3.txt',
+        'assets/home/hero-4.txt','assets/home/hero-5.txt','assets/home/hero-6-fixed.txt','assets/home/hero-7.txt'
+      ];
       try{
-        const responses=await Promise.all(parts.map(p=>fetch(p)));
+        const [responses,heroResponses]=await Promise.all([
+          Promise.all(parts.map(p=>fetch(p))),
+          Promise.all(heroFiles.map(p=>fetch(p)))
+        ]);
         const failed=responses.findIndex(r=>!r.ok);
         if(failed>=0) throw new Error(`Could not load simulator bundle part ${failed+1}.`);
+        const heroFailed=heroResponses.findIndex(r=>!r.ok);
+        if(heroFailed>=0) throw new Error(`Could not load home image part ${heroFailed+1}.`);
         let source=(await Promise.all(responses.map(r=>r.text()))).join('');
+        const heroBase64=(await Promise.all(heroResponses.map(r=>r.text()))).join('').replace(/\s/g,'');
         if(typeof patchSimulatorSource!=='function') throw new Error('V12 patch module did not load.');
         if(typeof patchSimulatorSourceV13!=='function') throw new Error('V13 chemistry patch module did not load.');
         if(typeof patchSimulatorSourceV14!=='function') throw new Error('V14 theme patch module did not load.');
@@ -31,7 +41,22 @@
         source=patchSimulatorSourceV13(source);
         source=patchSimulatorSourceV14(source);
         source=patchSimulatorSourceV16(source);
-        source=source.replace('<img id="v16Photo" alt="Thornton Water Treatment Plant site view">','<img id="v16Photo" alt="Thornton Water Treatment Plant site view" src="https://www.thorntonco.gov/sites/default/files/styles/16_9/public/2024-06/twtp.jpg?h=1db926b0&itok=vTQjzoNT">');
+        const heroCSS=`
+          .v16-panel{width:min(1180px,96vw);max-height:94vh;grid-template-columns:1fr;overflow:auto}
+          .v16-photo{min-height:0;background:#0e1317;overflow:hidden;border-radius:18px 18px 0 0}
+          .v16-photo img{display:block;width:100%;height:auto;min-height:0;max-height:none;object-fit:contain;object-position:center center}
+          .v16-copy{padding:18px 24px 22px}
+          .v16-copy h1{font-size:30px;margin:6px 0 8px}
+          .v16-copy p{margin:0 0 8px;max-width:980px}
+          .v16-meta{margin:8px 0}.v16-actions{margin:8px 0}
+          @media(max-height:760px) and (min-width:851px){
+            .v16-photo img{max-height:340px;object-fit:cover;object-position:center center}
+            .v16-copy{padding:14px 22px 18px}.v16-copy p{font-size:13px;line-height:1.4}
+          }
+          @media(max-width:850px){.v16-photo img{max-height:none;object-fit:contain}.v16-copy{padding:16px}}
+        `;
+        source=source.replace('</style>',heroCSS+'\n</style>');
+        source=source.replace('<img id="v16Photo" alt="Thornton Water Treatment Plant site view">',`<img id="v16Photo" alt="Thornton Water Treatment Plant aerial site view" src="data:image/jpeg;base64,${heroBase64}">`);
         document.open();
         document.write(source);
         document.close();
