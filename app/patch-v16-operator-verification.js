@@ -1,10 +1,10 @@
 function patchSimulatorSourceV16OperatorVerification(source){
   source=source
-    .replace(/Thornton WTP Operator Simulator V16\.10\.3 TEST[^<\n]*/g,'Thornton WTP Operator Simulator V16.10.4 TEST — Operator Verification Scoring')
-    .replace('THORNTON WTP // OPERATOR SIM V16.10.3 TEST','THORNTON WTP // OPERATOR SIM V16.10.4 TEST');
+    .replace(/Thornton WTP Operator Simulator V16\.10\.3 TEST[^<\n]*/g,'Thornton WTP Operator Simulator V16.10.4.1 TEST — Operator Verification Scoring')
+    .replace('THORNTON WTP // OPERATOR SIM V16.10.3 TEST','THORNTON WTP // OPERATOR SIM V16.10.4.1 TEST');
 
   const labLine='    const labScore=Math.min(100,state.sampleCount/requiredLabChecks*100);';
-  if(!source.includes(labLine))throw new Error('V16.10.4 could not locate strict lab-score calculation.');
+  if(!source.includes(labLine))throw new Error('V16.10.4.1 could not locate strict lab-score calculation.');
   source=source.replace(labLine,
 `    const verifiedLabChecks=v16104LabVerificationCount();
     const labScore=Math.min(100,verifiedLabChecks/requiredLabChecks*100);
@@ -12,7 +12,7 @@ function patchSimulatorSourceV16OperatorVerification(source){
     const distributionScore=v16104OperatorDistributionScore();`);
 
   if(!source.includes('      state.quality*.22 +')||!source.includes('      state.distribution*.16 +')){
-    throw new Error('V16.10.4 could not locate strict weighted score inputs.');
+    throw new Error('V16.10.4.1 could not locate strict weighted score inputs.');
   }
   source=source
     .replace('      state.quality*.22 +','      waterQualityScore*.22 +')
@@ -35,7 +35,7 @@ function patchSimulatorSourceV16OperatorVerification(source){
 
   const runtime=`
 
-  // V16.10.4 — separate physical process condition from operator verification performance.
+  // V16.10.4.1 — separate physical process condition from operator verification performance.
   function v16104EnsureVerification(){
     if(!state.operatorVerification||typeof state.operatorVerification!=='object'){
       state.operatorVerification={labWindows:[false,false,false,false],distWindows:[false,false]};
@@ -97,6 +97,7 @@ function patchSimulatorSourceV16OperatorVerification(source){
     if($('qualityTop'))$('qualityTop').textContent=Math.round(q);
     if($('dScore')){$('dScore').textContent=Math.round(d);$('dScore').title='Operator Distribution score: hydraulic condition capped by '+dist+'/2 verified review periods.';}
     if($('qlDist'))$('qlDist').textContent=Math.round(d);
+    if($('distTop'))$('distTop').textContent=Math.round(d);
     if($('samples'))$('samples').textContent=labs+'/4';
   }
 
@@ -128,7 +129,7 @@ function patchSimulatorSourceV16OperatorVerification(source){
 
   const marker='\n})();';
   const pos=source.lastIndexOf(marker);
-  if(pos<0)throw new Error('V16.10.4 could not locate simulator IIFE closing marker.');
+  if(pos<0)throw new Error('V16.10.4.1 could not locate simulator IIFE closing marker.');
   source=source.slice(0,pos)+runtime+source.slice(pos);
   return source;
 }
