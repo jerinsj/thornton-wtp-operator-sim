@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Thornton WTP Operator Simulator V16.9.1 TEST</title>
+  <title>Thornton WTP Operator Simulator V16.10 TEST</title>
   <style>
     body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11161b;color:#eef2f5;font:14px "Segoe UI Variable Text",Inter,"Segoe UI",Roboto,Arial,sans-serif}
     .loader{max-width:620px;padding:28px;text-align:center}.loader b{display:block;font-size:18px;margin-bottom:8px}.loader span{color:#a4b0b9;line-height:1.5}.err{color:#ff9b9b;margin-top:14px}
@@ -20,9 +20,10 @@
   <script src="app/patch-v16-strict-scoring.js?v=16.7-test"></script>
   <script src="app/patch-v16-process-status.js?v=16.8-test"></script>
   <script src="app/patch-v16-speed-range.js?v=16.9.1"></script>
+  <script src="app/patch-v16-ct-page.js?v=16.10"></script>
 </head>
 <body>
-  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.9.1 TEST…</b><span>Interactive SCADA test build with corrected 15 sec/s–1 min/s simulation speed control, working Home controls, live process status, strict scoring, valve consequences, routine tasks, and the local plant image. Not an actual control system.</span><div class="err" id="err"></div></div>
+  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.10 TEST…</b><span>Interactive SCADA training build with a dynamic CT/disinfection page, corrected 15 sec/s–1 min/s speed control, Home controls, live process status, strict scoring, valve consequences, routine tasks, and the local plant image. Not an actual control system.</span><div class="err" id="err"></div></div>
   <script>
     (async()=>{
       const parts=Array.from({length:10},(_,i)=>`app/parts/part-${String(i).padStart(2,'0')}.txt`);
@@ -43,6 +44,7 @@
         if(typeof patchSimulatorSourceV16StrictScoring!=='function') throw new Error('V16.7 strict scoring patch module did not load.');
         if(typeof patchSimulatorSourceV16ProcessStatus!=='function') throw new Error('V16.8 process status patch module did not load.');
         if(typeof patchSimulatorSourceV16SpeedRange!=='function') throw new Error('V16.9.1 speed range patch module did not load.');
+        if(typeof patchSimulatorSourceV16CTPage!=='function') throw new Error('V16.10 CT page patch module did not load.');
         source=patchSimulatorSource(source);
         source=patchSimulatorSourceV13(source);
         source=patchSimulatorSourceV14(source);
@@ -55,6 +57,7 @@
         source=patchSimulatorSourceV16StrictScoring(source);
         source=patchSimulatorSourceV16ProcessStatus(source);
         source=patchSimulatorSourceV16SpeedRange(source);
+        source=patchSimulatorSourceV16CTPage(source);
         document.open();
         document.write(source);
         document.close();
