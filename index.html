@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Thornton WTP Operator Simulator V16.10.4.1 TEST</title>
+  <title>Thornton WTP Operator Simulator V16.11 TEST</title>
   <style>
     body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11161b;color:#eef2f5;font:14px "Segoe UI Variable Text",Inter,"Segoe UI",Roboto,Arial,sans-serif}
     .loader{max-width:620px;padding:28px;text-align:center}.loader b{display:block;font-size:18px;margin-bottom:8px}.loader span{color:#a4b0b9;line-height:1.5}.err{color:#ff9b9b;margin-top:14px}
@@ -25,9 +25,10 @@
   <script src="app/patch-v16-sidebar-scroll.js?v=16.10.2"></script>
   <script src="app/patch-v16-seasonal-temp.js?v=16.10.3"></script>
   <script src="app/patch-v16-operator-verification.js?v=16.10.4.1"></script>
+  <script src="app/patch-v16-breakpoint-chemistry.js?v=16.11"></script>
 </head>
 <body>
-  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.10.4.1 TEST…</b><span>Interactive SCADA training build with corrected operator-verification scoring, randomized seasonal water temperature shared by System Overview and CT, corrected dynamic CT/disinfection, independent sidebar scrolling, 15 sec/s–1 min/s speed control, Home controls, live process status, valve consequences, routine tasks, and the local plant image. Not an actual control system.</span><div class="err" id="err"></div></div>
+  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.11 TEST…</b><span>Interactive SCADA training build with generalized dynamic chloramination/breakpoint chemistry, operator-verification scoring, randomized seasonal water temperature shared by System Overview and CT, dynamic CT/disinfection, independent sidebar scrolling, 15 sec/s–1 min/s speed control, Home controls, live process status, valve consequences, routine tasks, and the local plant image. Not an actual control system.</span><div class="err" id="err"></div></div>
   <script>
     (async()=>{
       const parts=Array.from({length:10},(_,i)=>`app/parts/part-${String(i).padStart(2,'0')}.txt`);
@@ -53,6 +54,7 @@
         if(typeof patchSimulatorSourceV16SidebarScroll!=='function') throw new Error('V16.10.2 sidebar scroll patch module did not load.');
         if(typeof patchSimulatorSourceV16SeasonalTemp!=='function') throw new Error('V16.10.3 seasonal temperature patch module did not load.');
         if(typeof patchSimulatorSourceV16OperatorVerification!=='function') throw new Error('V16.10.4.1 operator verification patch module did not load.');
+        if(typeof patchSimulatorSourceV16BreakpointChemistry!=='function') throw new Error('V16.11 breakpoint chemistry patch module did not load.');
         source=patchSimulatorSource(source);
         source=patchSimulatorSourceV13(source);
         source=patchSimulatorSourceV14(source);
@@ -70,6 +72,7 @@
         source=patchSimulatorSourceV16SidebarScroll(source);
         source=patchSimulatorSourceV16SeasonalTemp(source);
         source=patchSimulatorSourceV16OperatorVerification(source);
+        source=patchSimulatorSourceV16BreakpointChemistry(source);
         document.open();
         document.write(source);
         document.close();
