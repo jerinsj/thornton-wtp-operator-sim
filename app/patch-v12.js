@@ -6,9 +6,9 @@ function patchSimulatorSource(source){
 `<div class="control-head"><span>Simulation speed</span><span class="read" id="speedRead">4×</span></div>
 <input id="speed" max="10" min="1" step="1" type="range" value="4"/>
 <div class="hint">1 real second = 1–10 simulated minutes.</div>`,
-`<div class="control-head"><span>Simulation speed</span><span class="read" id="speedRead">30 sec/s</span></div>
-<input id="speed" max="2" min="1" step="1" type="range" value="1"/>
-<div class="hint">1 real second = 30 simulated seconds to 1 simulated minute.</div>`)
+`<div class="control-head"><span>Simulation speed</span><span class="read" id="speedRead">15 sec/s</span></div>
+<input id="speed" max="4" min="1" step="1" type="range" value="1"/>
+<div class="hint">1 real second = 15 simulated seconds to 1 simulated minute.</div>`)
     .replace(
 `  function step(){
     if(state.ended)return;
@@ -19,11 +19,11 @@ function patchSimulatorSource(source){
 `  let simMinuteAccumulator=0;
   function step(){
     if(state.ended)return;
-    simMinuteAccumulator += (+controls.speed.value)*0.5;
+    simMinuteAccumulator += (+controls.speed.value)*0.25;
     while(simMinuteAccumulator>=1 && !state.ended){simulateMinute();simMinuteAccumulator-=1;}
     render();
   }`)
-    .replace("$('speedRead').textContent=controls.speed.value+'×';","$('speedRead').textContent=(+controls.speed.value===1?'30 sec/s':'1 min/s');")
+    .replace("$('speedRead').textContent=controls.speed.value+'×';","$('speedRead').textContent=({1:'15 sec/s',2:'30 sec/s',3:'45 sec/s',4:'1 min/s'}[+controls.speed.value]||'15 sec/s');")
     .replace(
 "    const e=choices[Math.floor(Math.random()*choices.length)];",
 `    const eligible=choices.filter(x=>shiftIssueRemaining.includes(x.id));
