@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Thornton WTP Operator Simulator V16.5 TEST</title>
+  <title>Thornton WTP Operator Simulator V16.6 TEST</title>
   <style>
     body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11161b;color:#eef2f5;font:14px "Segoe UI Variable Text",Inter,"Segoe UI",Roboto,Arial,sans-serif}
     .loader{max-width:620px;padding:28px;text-align:center}.loader b{display:block;font-size:18px;margin-bottom:8px}.loader span{color:#a4b0b9;line-height:1.5}.err{color:#ff9b9b;margin-top:14px}
@@ -16,9 +16,10 @@
   <script src="app/patch-v16-tasks.js?v=16.2"></script>
   <script src="app/patch-v16-home-image.js?v=16.3"></script>
   <script src="app/patch-v16-scada-branch.js?v=16.5-test"></script>
+  <script src="app/patch-v16-valve-consequences.js?v=16.6-test"></script>
 </head>
 <body>
-  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.5 TEST…</b><span>Branch-only test build for the scoped interactive SCADA renderer. The current main game is not modified by this build.</span><div class="err" id="err"></div></div>
+  <div class="loader"><b>Loading Thornton WTP Operator Simulator V16.6 TEST…</b><span>Interactive SCADA test build with valve-specific alarms, modeled flow consequences, ACK-driven corrective reopening, routine tasks, and the direct local plant image. Not an actual control system.</span><div class="err" id="err"></div></div>
   <script>
     (async()=>{
       const parts=Array.from({length:10},(_,i)=>`app/parts/part-${String(i).padStart(2,'0')}.txt`);
@@ -35,6 +36,7 @@
         if(typeof patchSimulatorSourceV16Tasks!=='function') throw new Error('V16.2 task-board patch module did not load.');
         if(typeof patchSimulatorSourceV16HomeImage!=='function') throw new Error('V16.3 home-image patch module did not load.');
         if(typeof patchSimulatorSourceV16ScadaBranch!=='function') throw new Error('V16.5 branch SCADA patch module did not load.');
+        if(typeof patchSimulatorSourceV16ValveConsequences!=='function') throw new Error('V16.6 valve consequence patch module did not load.');
         source=patchSimulatorSource(source);
         source=patchSimulatorSourceV13(source);
         source=patchSimulatorSourceV14(source);
@@ -43,6 +45,7 @@
         source=patchSimulatorSourceV16Tasks(source);
         source=patchSimulatorSourceV16HomeImage(source);
         source=patchSimulatorSourceV16ScadaBranch(source);
+        source=patchSimulatorSourceV16ValveConsequences(source);
         document.open();
         document.write(source);
         document.close();
